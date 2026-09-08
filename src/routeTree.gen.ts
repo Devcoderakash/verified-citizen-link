@@ -11,7 +11,11 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as HistoryRouteImport } from './routes/history'
+import { Route as ReportsRouteImport } from './routes/reports'
+import { Route as SystemRouteImport } from './routes/system'
 import { Route as VerifyRouteImport } from './routes/verify'
+import { Route as ResultVerificationIdRouteImport } from './routes/result.$verificationId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -23,40 +27,98 @@ const DashboardRoute = DashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
+const HistoryRoute = HistoryRouteImport.update({
+  id: '/history',
+  path: '/history',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReportsRoute = ReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SystemRoute = SystemRouteImport.update({
+  id: '/system',
+  path: '/system',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const VerifyRoute = VerifyRouteImport.update({
   id: '/verify',
   path: '/verify',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResultVerificationIdRoute = ResultVerificationIdRouteImport.update({
+  id: '/result/$verificationId',
+  path: '/result/$verificationId',
   getParentRoute: () => rootRouteImport,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
+  '/history': typeof HistoryRoute
+  '/reports': typeof ReportsRoute
+  '/system': typeof SystemRoute
   '/verify': typeof VerifyRoute
+  '/result/$verificationId': typeof ResultVerificationIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
+  '/history': typeof HistoryRoute
+  '/reports': typeof ReportsRoute
+  '/system': typeof SystemRoute
   '/verify': typeof VerifyRoute
+  '/result/$verificationId': typeof ResultVerificationIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
+  '/history': typeof HistoryRoute
+  '/reports': typeof ReportsRoute
+  '/system': typeof SystemRoute
   '/verify': typeof VerifyRoute
+  '/result/$verificationId': typeof ResultVerificationIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/dashboard' | '/verify'
+  fullPaths:
+    | '/'
+    | '/dashboard'
+    | '/history'
+    | '/reports'
+    | '/system'
+    | '/verify'
+    | '/result/$verificationId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/dashboard' | '/verify'
-  id: '__root__' | '/' | '/dashboard' | '/verify'
+  to:
+    | '/'
+    | '/dashboard'
+    | '/history'
+    | '/reports'
+    | '/system'
+    | '/verify'
+    | '/result/$verificationId'
+  id:
+    | '__root__'
+    | '/'
+    | '/dashboard'
+    | '/history'
+    | '/reports'
+    | '/system'
+    | '/verify'
+    | '/result/$verificationId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DashboardRoute: typeof DashboardRoute
+  HistoryRoute: typeof HistoryRoute
+  ReportsRoute: typeof ReportsRoute
+  SystemRoute: typeof SystemRoute
   VerifyRoute: typeof VerifyRoute
+  ResultVerificationIdRoute: typeof ResultVerificationIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -75,11 +137,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/history': {
+      id: '/history'
+      path: '/history'
+      fullPath: '/history'
+      preLoaderRoute: typeof HistoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reports': {
+      id: '/reports'
+      path: '/reports'
+      fullPath: '/reports'
+      preLoaderRoute: typeof ReportsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/system': {
+      id: '/system'
+      path: '/system'
+      fullPath: '/system'
+      preLoaderRoute: typeof SystemRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/verify': {
       id: '/verify'
       path: '/verify'
       fullPath: '/verify'
       preLoaderRoute: typeof VerifyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/result/$verificationId': {
+      id: '/result/$verificationId'
+      path: '/result/$verificationId'
+      fullPath: '/result/$verificationId'
+      preLoaderRoute: typeof ResultVerificationIdRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -88,7 +178,11 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DashboardRoute: DashboardRoute,
+  HistoryRoute: HistoryRoute,
+  ReportsRoute: ReportsRoute,
+  SystemRoute: SystemRoute,
   VerifyRoute: VerifyRoute,
+  ResultVerificationIdRoute: ResultVerificationIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
