@@ -212,7 +212,7 @@ function VerifyPage() {
               <ol className="space-y-3 text-sm text-muted-foreground">
                 {[
                   "The uploaded file is accepted and its type is identified.",
-                  "Document details are resolved by the prototype extraction layer — no OCR is performed.",
+                  "Details are read from the uploaded image by an AI document reader.",
                   "Values are compared field-by-field with the synthetic reference records.",
                   "The citizen's other identity records are checked for conflicts.",
                   "A transparent weighted risk score and decision are produced.",
