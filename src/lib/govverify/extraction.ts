@@ -157,7 +157,12 @@ function toExtracted(
 }
 
 export type ExtractionInput =
-  | { kind: "upload"; fileName: string; selectedType: DocumentType | "AUTO" }
+  | {
+      kind: "upload";
+      fileName: string;
+      selectedType: DocumentType | "AUTO";
+      imageDataUrl?: string | undefined;
+    }
   | { kind: "demo"; scenarioId: string };
 
 export interface ExtractionResult {
@@ -183,14 +188,43 @@ export async function extractDocument(input: ExtractionInput): Promise<Extractio
     };
   }
 
-  const detectedType =
-    input.selectedType === "AUTO" ? classifyDocument(input.fileName) : input.selectedType;
-  const row = await pickDocumentForFile(detectedType, input.fileName);
-  if (!row) {
-    throw new Error("No reference records available for this document type.");
+  if (!input.imageDataUrl) {
+    throw new Error(
+      "This file cannot be read. Please upload a clear photo or scan of the document (JPG or PNG).",
+    );
   }
+
+  const read = await readDocumentImage({
+    data: { imageDataUrl: input.imageDataUrl, fileName: input.fileName },
+  });
+
+  const detectedType: DocumentType =
+    input.selectedType !== "AUTO"
+      ? input.selectedType
+      : read.documentType !== "UNKNOWN"
+        ? read.documentType
+        : classifyDocument(input.fileName);
+
+  if (!read.documentNumber || !read.name) {
+    throw new Error(
+      "The document number or name could not be read from this image. Please upload a clearer photo.",
+    );
+  }
+
   return {
     detectedType,
-    extracted: toExtracted(row, "PROTOTYPE_MAPPING", input.fileName),
+    extracted: {
+      documentType: detectedType,
+      name: read.name,
+      dob: read.dob,
+      documentNumber: read.documentNumber,
+      address: read.address,
+      gender: read.gender,
+      fatherName: read.fatherName,
+      issueDate: read.issueDate,
+      expiryDate: read.expiryDate,
+      method: "AI_READ",
+      sourceFileName: input.fileName,
+    },
   };
 }

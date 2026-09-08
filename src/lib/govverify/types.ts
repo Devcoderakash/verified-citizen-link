@@ -30,7 +30,7 @@ export interface ExtractedDocument {
   issueDate: string | null;
   expiryDate: string | null;
   /** How these values were obtained — prototype only, never real OCR. */
-  method: "DEMO_FIXTURE" | "PROTOTYPE_MAPPING";
+  method: "DEMO_FIXTURE" | "PROTOTYPE_MAPPING" | "AI_READ";
   sourceFileName: string;
   scenarioLabel?: string;
 }
