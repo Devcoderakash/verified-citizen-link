@@ -186,7 +186,9 @@ function ResultPage() {
             value={
               extracted.method === "DEMO_FIXTURE"
                 ? "Demonstration fixture (no OCR)"
-                : "Prototype mapping (no OCR)"
+                : extracted.method === "AI_READ"
+                  ? "AI document reader (uploaded image)"
+                  : "Prototype mapping (no OCR)"
             }
           />
           <FieldRow label="Face verification" value="Not available in this prototype" />

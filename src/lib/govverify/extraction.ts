@@ -5,11 +5,11 @@
  * engine can replace `extractDocument()` later without touching the
  * verification, cross-document or risk layers.
  *
- * In this prototype NO OCR is performed. Values are resolved from the
- * synthetic reference dataset using a deterministic mapping of the
- * uploaded file, or from a fixed demo scenario.
+ * Uploaded documents are read with an AI vision model; demo scenarios
+ * resolve fixed rows from the synthetic reference dataset.
  */
 import { supabase } from "@/integrations/supabase/client";
+import { readDocumentImage } from "./extract.functions";
 import type { DocumentRow, DocumentType, ExtractedDocument } from "./types";
 
 export interface DemoScenario {
@@ -111,28 +111,6 @@ async function loadDocument(
   return (data as unknown as DocumentRow) ?? null;
 }
 
-async function pickDocumentForFile(
-  documentType: DocumentType,
-  fileName: string,
-): Promise<DocumentRow | null> {
-  // Explicit reference in the filename wins (e.g. "aadhaar_P042.png").
-  const explicit = /p\d{3}/i.exec(fileName);
-  if (explicit) {
-    const found = await loadDocument(documentType, explicit[0].toUpperCase());
-    if (found) return found;
-  }
-  const { data, error } = await supabase
-    .from("documents")
-    .select("*")
-    .eq("document_type", documentType)
-    .order("document_id", { ascending: true })
-    .limit(1000);
-  if (error) throw new Error(error.message);
-  const rows = (data ?? []) as unknown as DocumentRow[];
-  if (!rows.length) return null;
-  return rows[hash(fileName) % rows.length]!;
-}
-
 function toExtracted(
   row: DocumentRow,
   method: ExtractedDocument["method"],
@@ -157,7 +135,12 @@ function toExtracted(
 }
 
 export type ExtractionInput =
-  | { kind: "upload"; fileName: string; selectedType: DocumentType | "AUTO" }
+  | {
+      kind: "upload";
+      fileName: string;
+      selectedType: DocumentType | "AUTO";
+      imageDataUrl?: string | undefined;
+    }
   | { kind: "demo"; scenarioId: string };
 
 export interface ExtractionResult {
@@ -183,14 +166,43 @@ export async function extractDocument(input: ExtractionInput): Promise<Extractio
     };
   }
 
-  const detectedType =
-    input.selectedType === "AUTO" ? classifyDocument(input.fileName) : input.selectedType;
-  const row = await pickDocumentForFile(detectedType, input.fileName);
-  if (!row) {
-    throw new Error("No reference records available for this document type.");
+  if (!input.imageDataUrl) {
+    throw new Error(
+      "This file cannot be read. Please upload a clear photo or scan of the document (JPG or PNG).",
+    );
   }
+
+  const read = await readDocumentImage({
+    data: { imageDataUrl: input.imageDataUrl, fileName: input.fileName },
+  });
+
+  const detectedType: DocumentType =
+    input.selectedType !== "AUTO"
+      ? input.selectedType
+      : read.documentType !== "UNKNOWN"
+        ? read.documentType
+        : classifyDocument(input.fileName);
+
+  if (!read.documentNumber || !read.name) {
+    throw new Error(
+      "The document number or name could not be read from this image. Please upload a clearer photo.",
+    );
+  }
+
   return {
     detectedType,
-    extracted: toExtracted(row, "PROTOTYPE_MAPPING", input.fileName),
+    extracted: {
+      documentType: detectedType,
+      name: read.name,
+      dob: read.dob,
+      documentNumber: read.documentNumber,
+      address: read.address,
+      gender: read.gender,
+      fatherName: read.fatherName,
+      issueDate: read.issueDate,
+      expiryDate: read.expiryDate,
+      method: "AI_READ",
+      sourceFileName: input.fileName,
+    },
   };
 }
