@@ -67,7 +67,18 @@ export function renderDemoCard(input: DemoCardInput): string {
   ctx.font = "22px Arial, sans-serif";
   ctx.fillText("PHOTO", 120, 325);
 
-  const rows: [string, string][] = [["Name", name]];
+  const NUMBER_LABEL: Record<DocumentType, string> = {
+    AADHAAR: "Aadhaar Number",
+    PAN: "Permanent Account Number",
+    VOTER_ID: "EPIC Number",
+    DRIVING_LICENCE: "Licence Number",
+  };
+  const spacedNumber =
+    documentType === "AADHAAR" ? number.replace(/(\d{4})(?=\d)/g, "$1 ").trim() : number;
+  const rows: [string, string][] = [
+    ["Name", name],
+    [NUMBER_LABEL[documentType], spacedNumber],
+  ];
   if (dob) rows.push(["DOB", fmt(dob)]);
   if (gender) rows.push(["Gender", gender]);
   if (documentType !== "PAN" && address) rows.push(["Address", address]);
