@@ -61,7 +61,7 @@ function SystemPage() {
             {[
               "Document intake — file accepted and validated in the browser.",
               "Type identification — chosen by the officer or inferred from the file.",
-              "Information extraction — prototype mapping layer; no OCR is performed and none is claimed.",
+              "Information extraction — uploaded images are read by an AI document reader; demo documents use fixed fixtures.",
               "Record matching — document number looked up in the synthetic reference database.",
               "Field comparison — name, date of birth, number, address, gender, status and validity.",
               "Cross-document check — the citizen's other identity records are compared for conflicts.",
