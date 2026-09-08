@@ -264,9 +264,10 @@ export async function runVerification(
   const verificationStatus =
     risk.level === "LOW"
       ? "VERIFIED"
-      : risk.level === "CRITICAL"
+      : risk.level === "HIGH" || risk.level === "CRITICAL"
         ? "HIGH_RISK"
         : "REVIEW_REQUIRED";
+
 
   const decision =
     verificationStatus === "VERIFIED"

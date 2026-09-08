@@ -9,7 +9,7 @@ export const RISK_WEIGHTS = {
   DOB_MISMATCH: 25,
   NUMBER_MISMATCH: 20,
   ADDRESS_MISMATCH: 10,
-  EXPIRED_DOCUMENT: 15,
+  EXPIRED_DOCUMENT: 20,
   CROSS_DOCUMENT_CONFLICT: 20,
   TAMPER_INDICATOR: 30,
   FACE_MISMATCH: 30,
@@ -31,11 +31,12 @@ export interface RiskResult {
 }
 
 export function riskLevelFor(score: number): RiskLevel {
-  if (score <= 25) return "LOW";
-  if (score <= 50) return "MEDIUM";
-  if (score <= 75) return "HIGH";
+  if (score <= 10) return "LOW";
+  if (score <= 40) return "MEDIUM";
+  if (score <= 70) return "HIGH";
   return "CRITICAL";
 }
+
 
 export function calculateRisk(input: RiskInput): RiskResult {
   const reasons: RiskReason[] = [];

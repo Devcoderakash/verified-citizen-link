@@ -79,9 +79,10 @@ function SystemPage() {
 
         <Panel title="Risk weighting" icon={ShieldAlert}>
           <p className="mb-3 text-sm text-muted-foreground">
-            Each triggered signal adds its weight; the total is capped at 100. Bands: 0–25 low, 26–50
-            medium, 51–75 high, 76–100 critical.
+            Each triggered signal adds its weight; the total is capped at 100. Bands: 0–10 low, 11–40
+            medium, 41–70 high, 71–100 critical.
           </p>
+
           {(Object.keys(RISK_WEIGHTS) as (keyof typeof RISK_WEIGHTS)[]).map((k) => (
             <FieldRow key={k} label={WEIGHT_LABELS[k]} value={`+${RISK_WEIGHTS[k]}`} mono />
           ))}
