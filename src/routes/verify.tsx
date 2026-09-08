@@ -150,9 +150,25 @@ function VerifyPage() {
                   />
                   <button
                     type="button"
-                    onClick={() =>
-                      void process({ kind: "upload", fileName: doc.file.name, selectedType })
-                    }
+                    onClick={() => {
+                      void (async () => {
+                        let imageDataUrl: string | undefined;
+                        if (doc.file.type.startsWith("image/")) {
+                          imageDataUrl = await new Promise<string>((resolve, reject) => {
+                            const reader = new FileReader();
+                            reader.onload = () => resolve(String(reader.result));
+                            reader.onerror = () => reject(new Error("File could not be read."));
+                            reader.readAsDataURL(doc.file);
+                          });
+                        }
+                        await process({
+                          kind: "upload",
+                          fileName: doc.file.name,
+                          selectedType,
+                          imageDataUrl,
+                        });
+                      })();
+                    }}
                     className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
                   >
                     <ShieldCheck className="size-4" /> Start verification
