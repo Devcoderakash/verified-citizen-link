@@ -12,7 +12,7 @@ export function DocumentPreview({
   fileName: string;
   fileSize?: number;
   previewUrl?: string | null;
-  documentType?: DocumentType;
+  documentType?: DocumentType | undefined;
   onRemove?: () => void;
   compact?: boolean;
 }) {

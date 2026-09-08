@@ -114,9 +114,10 @@ export async function saveVerification(outcome: VerificationOutcome, officerName
     citizen_name: outcome.citizenName,
     officer_name: officerName,
     source_file_name: outcome.extracted.sourceFileName,
-    extracted: outcome.extracted as unknown as Record<string, unknown>,
-    cross_documents: outcome.crossDocuments as unknown as Record<string, unknown>[],
-    risk_reasons: outcome.riskReasons as unknown as Record<string, unknown>[],
+    extracted: JSON.parse(JSON.stringify(outcome.extracted)),
+    cross_documents: JSON.parse(JSON.stringify(outcome.crossDocuments)),
+    risk_reasons: JSON.parse(JSON.stringify(outcome.riskReasons)),
+
     name_match: nameField?.match_status ?? "NOT_AVAILABLE",
     dob_match: dobField?.match_status ?? "NOT_AVAILABLE",
     address_match: addrField?.match_status ?? "NOT_AVAILABLE",
