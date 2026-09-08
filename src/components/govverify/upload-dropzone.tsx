@@ -2,7 +2,7 @@ import { FileUp, Loader2, UploadCloud } from "lucide-react";
 import { useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
-const ACCEPTED = ["image/jpeg", "image/jpg", "image/png", "application/pdf"];
+const ACCEPTED = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 const MAX_BYTES = 10 * 1024 * 1024;
 
 export interface UploadedDocument {
@@ -27,7 +27,7 @@ export function UploadDropzone({
     const file = files?.[0];
     if (!file) return;
     if (!ACCEPTED.includes(file.type)) {
-      setError("Unsupported format. Upload a JPG, JPEG, PNG or PDF file.");
+      setError("OCR needs an image. Upload a JPG, JPEG, PNG or WEBP photo/scan of the document.");
       return;
     }
     if (file.size > MAX_BYTES) {
@@ -81,13 +81,13 @@ export function UploadDropzone({
           Drag &amp; drop the document here, or <span className="text-primary underline">browse files</span>
         </p>
         <p className="mt-3 text-xs text-muted-foreground">
-          Supported: JPG, JPEG, PNG, PDF · Maximum size 10 MB
+          Supported: JPG, JPEG, PNG, WEBP · Maximum size 10 MB
         </p>
         <input
           ref={inputRef}
           type="file"
           className="hidden"
-          accept=".jpg,.jpeg,.png,.pdf"
+          accept=".jpg,.jpeg,.png,.webp"
           onChange={(e) => handleFiles(e.target.files)}
         />
       </div>

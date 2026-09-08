@@ -105,9 +105,10 @@ export async function runVerification(
       riskReasons: [
         {
           code: "NO_RECORD",
-          label: "No matching identity record",
+          label: "Identity record not found",
           weight: 40,
-          detail: "The document number was not found in the available synthetic records.",
+          detail:
+            "The extracted document information could not be matched with the available synthetic verification records.",
         },
       ],
       riskScore: 40,
@@ -116,7 +117,7 @@ export async function runVerification(
       faceMatch: "NOT_AVAILABLE",
       tamperIndicator: "NOT_AVAILABLE",
       decision:
-        "Unable to verify against available records. Manual verification recommended — this outcome does not indicate fraud.",
+        "Identity record not found. The extracted document information could not be matched with the available synthetic verification records — manual verification required. This outcome does not indicate fraud.",
       createdAt,
     };
   }

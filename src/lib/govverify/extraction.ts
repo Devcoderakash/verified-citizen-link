@@ -1,15 +1,14 @@
 /**
- * EXTRACTION LAYER (prototype)
+ * EXTRACTION LAYER
  * ---------------------------------------------------------------
- * This layer is deliberately isolated so a real OCR / document-AI
- * engine can replace `extractDocument()` later without touching the
- * verification, cross-document or risk layers.
- *
- * Uploaded documents are read with an AI vision model; demo scenarios
- * resolve fixed rows from the synthetic reference dataset.
+ * Real OCR (Tesseract.js) reads the uploaded image; the parser turns that
+ * text into fields. No filename mapping, no database substitution and no
+ * hardcoded person is used anywhere in this layer.
  */
 import { supabase } from "@/integrations/supabase/client";
-import { readDocumentImage } from "./extract.functions";
+import { classifyFromText } from "./documentClassifier";
+import { parseDocument } from "./documentParser";
+import type { OcrResult } from "./ocr";
 import type { DocumentRow, DocumentType, ExtractedDocument } from "./types";
 
 export interface DemoScenario {
@@ -17,9 +16,11 @@ export interface DemoScenario {
   title: string;
   subtitle: string;
   documentType: DocumentType;
+  /** Which synthetic record the demo IMAGE is drawn from — the image is then
+   *  read by real OCR exactly like any upload. */
   personId: string;
-  /** Deliberate difference between the "document" and the database record. */
-  override?: Partial<Pick<ExtractedDocument, "dob" | "name" | "documentNumber">>;
+  /** Deliberate difference printed on the demo image (forgery simulation). */
+  printedOverride?: { dob?: string; name?: string };
   scenarioLabel: string;
 }
 
@@ -27,32 +28,32 @@ export const DEMO_SCENARIOS: DemoScenario[] = [
   {
     id: "demo-aadhaar-genuine",
     title: "Demo Aadhaar — Genuine",
-    subtitle: "All fields consistent with reference records",
+    subtitle: "Image printed from a reference record, read by OCR",
     documentType: "AADHAAR",
     personId: "P001",
     scenarioLabel: "Genuine document",
   },
   {
     id: "demo-aadhaar-dob",
-    title: "Demo Aadhaar — DOB Mismatch",
-    subtitle: "Name and number match, date of birth differs",
+    title: "Demo Aadhaar — Altered date of birth",
+    subtitle: "Same holder, printed date of birth changed",
     documentType: "AADHAAR",
-    personId: "P003",
-    override: { dob: "1972-12-15" },
+    personId: "P001",
+    printedOverride: { dob: "1987-12-15" },
     scenarioLabel: "Date of birth inconsistency",
   },
   {
-    id: "demo-pan-crossdoc",
-    title: "Demo PAN — Cross-document Conflict",
-    subtitle: "Linked records hold different dates of birth",
+    id: "demo-pan-genuine",
+    title: "Demo PAN — Genuine",
+    subtitle: "PAN card image generated from a reference record",
     documentType: "PAN",
     personId: "P002",
-    scenarioLabel: "Cross-document inconsistency",
+    scenarioLabel: "Genuine document",
   },
   {
     id: "demo-voter-genuine",
     title: "Demo Voter ID — Genuine",
-    subtitle: "Electoral record consistent across documents",
+    subtitle: "Electoral card image generated from a reference record",
     documentType: "VOTER_ID",
     personId: "P004",
     scenarioLabel: "Genuine document",
@@ -60,149 +61,102 @@ export const DEMO_SCENARIOS: DemoScenario[] = [
   {
     id: "demo-dl-expired",
     title: "Demo Driving Licence — Expired",
-    subtitle: "Holder verified, licence validity lapsed",
+    subtitle: "Holder exists, licence validity lapsed",
     documentType: "DRIVING_LICENCE",
     personId: "P005",
     scenarioLabel: "Expired document",
   },
   {
-    id: "demo-dl-genuine",
-    title: "Demo Driving Licence — Genuine",
-    subtitle: "Valid licence, all fields consistent",
-    documentType: "DRIVING_LICENCE",
-    personId: "P006",
-    scenarioLabel: "Genuine document",
+    id: "demo-unknown-person",
+    title: "Demo Aadhaar — Unknown person",
+    subtitle: "Holder not present in the reference records",
+    documentType: "AADHAAR",
+    personId: "__UNKNOWN__",
+    scenarioLabel: "No reference record",
   },
 ];
 
-function hash(input: string): number {
-  let h = 2166136261;
-  for (let i = 0; i < input.length; i++) {
-    h ^= input.charCodeAt(i);
-    h = Math.imul(h, 16777619);
-  }
-  return Math.abs(h);
-}
-
-const TYPES: DocumentType[] = ["AADHAAR", "PAN", "VOTER_ID", "DRIVING_LICENCE"];
-
-/** Prototype "classification": filename hints first, deterministic fallback second. */
-export function classifyDocument(fileName: string): DocumentType {
-  const n = fileName.toLowerCase();
-  if (n.includes("aadhaar") || n.includes("adhaar") || n.includes("uid")) return "AADHAAR";
-  if (n.includes("pan")) return "PAN";
-  if (n.includes("voter") || n.includes("epic")) return "VOTER_ID";
-  if (n.includes("licence") || n.includes("license") || n.includes("dl")) return "DRIVING_LICENCE";
-  const idx = hash(n) % TYPES.length;
-  return TYPES[idx]!;
-}
-
-async function loadDocument(
-  documentType: DocumentType,
-  personId: string,
-): Promise<DocumentRow | null> {
+export async function loadDemoRow(scenario: DemoScenario): Promise<DocumentRow | null> {
+  if (scenario.personId === "__UNKNOWN__") return null;
   const { data, error } = await supabase
     .from("documents")
     .select("*")
-    .eq("document_type", documentType)
-    .eq("person_id", personId)
+    .eq("document_type", scenario.documentType)
+    .eq("person_id", scenario.personId)
     .maybeSingle();
   if (error) throw new Error(error.message);
   return (data as unknown as DocumentRow) ?? null;
 }
 
-function toExtracted(
-  row: DocumentRow,
-  method: ExtractedDocument["method"],
-  sourceFileName: string,
-  scenarioLabel?: string,
-  override?: DemoScenario["override"],
-): ExtractedDocument {
-  return {
-    documentType: row.document_type,
-    name: override?.name ?? row.holder_name,
-    dob: override?.dob ?? row.dob,
-    documentNumber: override?.documentNumber ?? row.document_number,
-    address: row.document_type === "PAN" ? null : row.address,
-    gender: row.document_type === "PAN" ? null : row.gender,
-    fatherName: row.document_type === "PAN" ? `${row.holder_name.split(" ").slice(-1)[0]} (guardian)` : null,
-    issueDate: row.issue_date,
-    expiryDate: row.expiry_date,
-    method,
-    sourceFileName,
-    ...(scenarioLabel ? { scenarioLabel } : {}),
-  };
+export class OcrFieldError extends Error {
+  constructor(
+    message: string,
+    public readonly missing: string[],
+  ) {
+    super(message);
+    this.name = "OcrFieldError";
+  }
 }
-
-export type ExtractionInput =
-  | {
-      kind: "upload";
-      fileName: string;
-      selectedType: DocumentType | "AUTO";
-      imageDataUrl?: string | undefined;
-    }
-  | { kind: "demo"; scenarioId: string };
 
 export interface ExtractionResult {
   extracted: ExtractedDocument;
   detectedType: DocumentType;
+  typeConfidence: "HIGH" | "MEDIUM" | "LOW";
 }
 
-export async function extractDocument(input: ExtractionInput): Promise<ExtractionResult> {
-  if (input.kind === "demo") {
-    const scenario = DEMO_SCENARIOS.find((s) => s.id === input.scenarioId);
-    if (!scenario) throw new Error("Unknown demo document.");
-    const row = await loadDocument(scenario.documentType, scenario.personId);
-    if (!row) throw new Error("Demo record unavailable in the reference dataset.");
-    return {
-      detectedType: scenario.documentType,
-      extracted: toExtracted(
-        row,
-        "DEMO_FIXTURE",
-        `${scenario.title}.png`,
-        scenario.scenarioLabel,
-        scenario.override,
-      ),
-    };
-  }
+/**
+ * Build the structured document from a real OCR result.
+ * `selectedType` is the officer's manual override ("AUTO" = detect from text).
+ */
+export function extractFromOcr(
+  ocr: OcrResult,
+  selectedType: DocumentType | "AUTO",
+  sourceFileName: string,
+  scenarioLabel?: string,
+): ExtractionResult {
+  const classification = classifyFromText(ocr.text);
+  const detectedType = selectedType === "AUTO" ? classification.documentType : selectedType;
 
-  if (!input.imageDataUrl) {
-    throw new Error(
-      "This file cannot be read. Please upload a clear photo or scan of the document (JPG or PNG).",
+  if (!detectedType) {
+    throw new OcrFieldError(
+      "Document type could not be determined from the scanned text. Please select the document type manually and try again.",
+      ["Document Type"],
     );
   }
 
-  const read = await readDocumentImage({
-    data: { imageDataUrl: input.imageDataUrl, fileName: input.fileName },
-  });
+  const parsed = parseDocument(detectedType, ocr.text);
 
-  const detectedType: DocumentType =
-    input.selectedType !== "AUTO"
-      ? input.selectedType
-      : read.documentType !== "UNKNOWN"
-        ? read.documentType
-        : classifyDocument(input.fileName);
-
-  if (!read.documentNumber || !read.name) {
-    throw new Error(
-      "The document number or name could not be read from this image. Please upload a clearer photo.",
+  if (!parsed.name || !parsed.documentNumber) {
+    throw new OcrFieldError(
+      `OCR could not read ${parsed.missing.join(", ")} from this image. Please upload a clearer photo or scan.`,
+      parsed.missing,
     );
   }
 
   return {
     detectedType,
+    typeConfidence: selectedType === "AUTO" ? classification.confidence : "HIGH",
     extracted: {
       documentType: detectedType,
-      name: read.name,
-      dob: read.dob,
-      documentNumber: read.documentNumber,
-      address: read.address,
-      gender: read.gender,
-      fatherName: read.fatherName,
-      issueDate: read.issueDate,
-      expiryDate: read.expiryDate,
-      method: "AI_READ",
-      sourceFileName: input.fileName,
+      name: parsed.name,
+      dob: parsed.dob,
+      documentNumber: parsed.documentNumber,
+      address: parsed.address,
+      gender: parsed.gender,
+      fatherName: parsed.fatherName,
+      issueDate: parsed.issueDate,
+      expiryDate: parsed.expiryDate,
+      method: "OCR_TESSERACT",
+      sourceFileName,
+      ocrText: ocr.text,
+      ocrConfidence: ocr.confidence,
+      ocrDurationMs: ocr.durationMs,
+      typeDetection:
+        selectedType === "AUTO"
+          ? { source: "OCR_TEXT", confidence: classification.confidence, indicators: classification.matchedIndicators }
+          : { source: "MANUAL", confidence: "HIGH", indicators: [] },
+      missingFields: parsed.missing,
+      ...(scenarioLabel ? { scenarioLabel } : {}),
     },
   };
 }

@@ -18,7 +18,7 @@ export type MatchStatus = "MATCH" | "PARTIAL_MATCH" | "MISMATCH" | "NOT_AVAILABL
 export type RiskLevel = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
 export type VerificationStatus = "VERIFIED" | "REVIEW_REQUIRED" | "HIGH_RISK" | "NO_RECORD";
 
-/** Output of the extraction layer. A real OCR engine can replace this later. */
+/** Output of the extraction layer — always produced by real OCR of an image. */
 export interface ExtractedDocument {
   documentType: DocumentType;
   name: string;
@@ -29,9 +29,18 @@ export interface ExtractedDocument {
   fatherName: string | null;
   issueDate: string | null;
   expiryDate: string | null;
-  /** How these values were obtained — prototype only, never real OCR. */
-  method: "DEMO_FIXTURE" | "PROTOTYPE_MAPPING" | "AI_READ";
+  method: "OCR_TESSERACT";
   sourceFileName: string;
+  /** Raw recognised text, kept for transparency. */
+  ocrText?: string;
+  ocrConfidence?: number;
+  ocrDurationMs?: number;
+  typeDetection?: {
+    source: "OCR_TEXT" | "MANUAL";
+    confidence: "HIGH" | "MEDIUM" | "LOW";
+    indicators: string[];
+  };
+  missingFields?: string[];
   scenarioLabel?: string;
 }
 

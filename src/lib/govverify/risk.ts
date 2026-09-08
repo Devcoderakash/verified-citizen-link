@@ -5,8 +5,8 @@
 import type { DocumentType, MatchStatus, RiskLevel, RiskReason } from "./types";
 
 export const RISK_WEIGHTS = {
-  NAME_MISMATCH: 25,
-  DOB_MISMATCH: 25,
+  NAME_MISMATCH: 45,
+  DOB_MISMATCH: 45,
   NUMBER_MISMATCH: 20,
   ADDRESS_MISMATCH: 10,
   EXPIRED_DOCUMENT: 20,

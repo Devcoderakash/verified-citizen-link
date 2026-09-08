@@ -149,8 +149,12 @@ export async function saveVerification(outcome: VerificationOutcome, officerName
   const events = [
     { event_type: "DOCUMENT_UPLOADED", description: `Document received: ${outcome.extracted.sourceFileName}` },
     {
+      event_type: "OCR_COMPLETED",
+      description: `Tesseract OCR read the image with ${outcome.extracted.ocrConfidence ?? 0}% average word confidence`,
+    },
+    {
       event_type: "INFORMATION_EXTRACTED",
-      description: `Prototype extraction layer produced ${outcome.fields.length} comparable fields`,
+      description: `${outcome.fields.length} fields parsed from the recognised text`,
     },
     {
       event_type: "DATABASE_MATCH",

@@ -59,9 +59,11 @@ function SystemPage() {
         <Panel title="Verification pipeline" icon={Workflow}>
           <ol className="space-y-3 text-sm text-muted-foreground">
             {[
-              "Document intake — file accepted and validated in the browser.",
-              "Type identification — chosen by the officer or inferred from the file.",
-              "Information extraction — uploaded images are read by an AI document reader; demo documents use fixed fixtures.",
+              "Document intake — image accepted and validated in the browser.",
+              "Image preprocessing — resize, greyscale conversion and contrast correction.",
+              "Optical character recognition — Tesseract reads the text from the image pixels.",
+              "Type identification — inferred from the recognised text, or selected by the officer.",
+              "Field parsing — name, date of birth, number and address parsed from the OCR text only; unreadable fields stay blank.",
               "Record matching — document number looked up in the synthetic reference database.",
               "Field comparison — name, date of birth, number, address, gender, status and validity.",
               "Cross-document check — the citizen's other identity records are compared for conflicts.",
@@ -100,13 +102,6 @@ function SystemPage() {
               <p className="font-medium">Live government API lookup</p>
               <p className="text-xs text-muted-foreground">
                 Not available — all matching happens against synthetic local records.
-              </p>
-            </li>
-            <li className="rounded-lg border border-dashed border-border px-3 py-2.5">
-              <p className="font-medium">Optical character recognition</p>
-              <p className="text-xs text-muted-foreground">
-                Not available — the extraction layer is a transparent stand-in that a real OCR engine
-                could replace.
               </p>
             </li>
           </ul>
