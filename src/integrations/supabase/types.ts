@@ -14,7 +14,258 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      documents: {
+        Row: {
+          address: string | null
+          created_at: string
+          dob: string | null
+          document_id: string
+          document_number: string
+          document_type: string
+          expiry_date: string | null
+          gender: string | null
+          holder_name: string
+          id: string
+          issue_date: string | null
+          person_id: string
+          status: string
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          dob?: string | null
+          document_id: string
+          document_number: string
+          document_type: string
+          expiry_date?: string | null
+          gender?: string | null
+          holder_name: string
+          id?: string
+          issue_date?: string | null
+          person_id: string
+          status?: string
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          dob?: string | null
+          document_id?: string
+          document_number?: string
+          document_type?: string
+          expiry_date?: string | null
+          gender?: string | null
+          holder_name?: string
+          id?: string
+          issue_date?: string | null
+          person_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documents_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "persons"
+            referencedColumns: ["person_id"]
+          },
+        ]
+      }
+      persons: {
+        Row: {
+          address: string | null
+          created_at: string
+          dob: string
+          gender: string | null
+          id: string
+          name: string
+          person_id: string
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          dob: string
+          gender?: string | null
+          id?: string
+          name: string
+          person_id: string
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          dob?: string
+          gender?: string | null
+          id?: string
+          name?: string
+          person_id?: string
+        }
+        Relationships: []
+      }
+      verification_events: {
+        Row: {
+          created_at: string
+          description: string | null
+          event_type: string
+          id: string
+          verification_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          event_type: string
+          id?: string
+          verification_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          event_type?: string
+          id?: string
+          verification_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "verification_events_verification_id_fkey"
+            columns: ["verification_id"]
+            isOneToOne: false
+            referencedRelation: "verification_records"
+            referencedColumns: ["verification_id"]
+          },
+        ]
+      }
+      verification_field_results: {
+        Row: {
+          confidence: number | null
+          created_at: string
+          database_value: string | null
+          extracted_value: string | null
+          field_name: string
+          id: string
+          match_status: string
+          verification_id: string
+        }
+        Insert: {
+          confidence?: number | null
+          created_at?: string
+          database_value?: string | null
+          extracted_value?: string | null
+          field_name: string
+          id?: string
+          match_status: string
+          verification_id: string
+        }
+        Update: {
+          confidence?: number | null
+          created_at?: string
+          database_value?: string | null
+          extracted_value?: string | null
+          field_name?: string
+          id?: string
+          match_status?: string
+          verification_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "verification_field_results_verification_id_fkey"
+            columns: ["verification_id"]
+            isOneToOne: false
+            referencedRelation: "verification_records"
+            referencedColumns: ["verification_id"]
+          },
+        ]
+      }
+      verification_records: {
+        Row: {
+          address_match: string | null
+          citizen_name: string | null
+          created_at: string
+          cross_documents: Json
+          dob_match: string | null
+          document_id: string | null
+          document_number_match: string | null
+          document_type: string
+          expiry_valid: string | null
+          extracted: Json
+          face_match: string
+          id: string
+          name_match: string | null
+          officer_name: string | null
+          person_id: string | null
+          risk_level: string
+          risk_reasons: Json
+          risk_score: number
+          source_file_name: string | null
+          status_match: string | null
+          tamper_indicator: string
+          verification_id: string
+          verification_status: string
+        }
+        Insert: {
+          address_match?: string | null
+          citizen_name?: string | null
+          created_at?: string
+          cross_documents?: Json
+          dob_match?: string | null
+          document_id?: string | null
+          document_number_match?: string | null
+          document_type: string
+          expiry_valid?: string | null
+          extracted?: Json
+          face_match?: string
+          id?: string
+          name_match?: string | null
+          officer_name?: string | null
+          person_id?: string | null
+          risk_level?: string
+          risk_reasons?: Json
+          risk_score?: number
+          source_file_name?: string | null
+          status_match?: string | null
+          tamper_indicator?: string
+          verification_id: string
+          verification_status?: string
+        }
+        Update: {
+          address_match?: string | null
+          citizen_name?: string | null
+          created_at?: string
+          cross_documents?: Json
+          dob_match?: string | null
+          document_id?: string | null
+          document_number_match?: string | null
+          document_type?: string
+          expiry_valid?: string | null
+          extracted?: Json
+          face_match?: string
+          id?: string
+          name_match?: string | null
+          officer_name?: string | null
+          person_id?: string | null
+          risk_level?: string
+          risk_reasons?: Json
+          risk_score?: number
+          source_file_name?: string | null
+          status_match?: string | null
+          tamper_indicator?: string
+          verification_id?: string
+          verification_status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "verification_records_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["document_id"]
+          },
+          {
+            foreignKeyName: "verification_records_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "persons"
+            referencedColumns: ["person_id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
