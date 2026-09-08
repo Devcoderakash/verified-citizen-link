@@ -5,11 +5,11 @@
  * engine can replace `extractDocument()` later without touching the
  * verification, cross-document or risk layers.
  *
- * In this prototype NO OCR is performed. Values are resolved from the
- * synthetic reference dataset using a deterministic mapping of the
- * uploaded file, or from a fixed demo scenario.
+ * Uploaded documents are read with an AI vision model; demo scenarios
+ * resolve fixed rows from the synthetic reference dataset.
  */
 import { supabase } from "@/integrations/supabase/client";
+import { readDocumentImage } from "./extract.functions";
 import type { DocumentRow, DocumentType, ExtractedDocument } from "./types";
 
 export interface DemoScenario {
@@ -109,28 +109,6 @@ async function loadDocument(
     .maybeSingle();
   if (error) throw new Error(error.message);
   return (data as unknown as DocumentRow) ?? null;
-}
-
-async function pickDocumentForFile(
-  documentType: DocumentType,
-  fileName: string,
-): Promise<DocumentRow | null> {
-  // Explicit reference in the filename wins (e.g. "aadhaar_P042.png").
-  const explicit = /p\d{3}/i.exec(fileName);
-  if (explicit) {
-    const found = await loadDocument(documentType, explicit[0].toUpperCase());
-    if (found) return found;
-  }
-  const { data, error } = await supabase
-    .from("documents")
-    .select("*")
-    .eq("document_type", documentType)
-    .order("document_id", { ascending: true })
-    .limit(1000);
-  if (error) throw new Error(error.message);
-  const rows = (data ?? []) as unknown as DocumentRow[];
-  if (!rows.length) return null;
-  return rows[hash(fileName) % rows.length]!;
 }
 
 function toExtracted(
