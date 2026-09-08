@@ -1,6 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { AlertCircle, FileCheck2, Sparkles, ScanLine, ShieldCheck } from "lucide-react";
+import { AlertCircle, FileCheck2, RotateCcw, ScanLine, ShieldCheck, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AppShell } from "@/components/govverify/app-shell";
 import { DocumentPreview } from "@/components/govverify/document-preview";
@@ -9,7 +9,15 @@ import { PROCESSING_STEPS, ProcessingSteps } from "@/components/govverify/proces
 import { UploadDropzone, type UploadedDocument } from "@/components/govverify/upload-dropzone";
 import { useAuth } from "@/lib/auth";
 import { saveVerification } from "@/lib/govverify/db";
-import { DEMO_SCENARIOS, extractDocument } from "@/lib/govverify/extraction";
+import { renderDemoCard, UNKNOWN_PERSON_CARD } from "@/lib/govverify/demo-image";
+import {
+  DEMO_SCENARIOS,
+  extractFromOcr,
+  loadDemoRow,
+  OcrFieldError,
+  type DemoScenario,
+} from "@/lib/govverify/extraction";
+import { ocrDataUrl, ocrImageFile, type OcrProgress } from "@/lib/govverify/ocr";
 import { DOCUMENT_LABELS, type DocumentType } from "@/lib/govverify/types";
 import { runVerification } from "@/lib/govverify/verification";
 import { cn } from "@/lib/utils";
@@ -21,12 +29,12 @@ export const Route = createFileRoute("/verify")({
       {
         name: "description",
         content:
-          "Upload an Aadhaar, PAN, Voter ID or Driving Licence document and run a field-by-field identity verification with cross-document checks and risk scoring.",
+          "Upload an Aadhaar, PAN, Voter ID or Driving Licence image. Tesseract OCR reads the document, then fields are compared with the reference records and scored for risk.",
       },
       { property: "og:title", content: "New Identity Verification | GovVerify" },
       {
         property: "og:description",
-        content: "Upload a government ID and run verification with cross-document checks and risk scoring.",
+        content: "Real OCR of the uploaded ID image, field-by-field comparison and risk scoring.",
       },
     ],
   }),
@@ -41,6 +49,10 @@ const TYPE_OPTIONS: (DocumentType | "AUTO")[] = [
   "DRIVING_LICENCE",
 ];
 
+type Job =
+  | { kind: "upload"; file: File }
+  | { kind: "demo"; scenario: DemoScenario };
+
 function VerifyPage() {
   const { session } = useAuth();
   const navigate = useNavigate();
@@ -48,7 +60,9 @@ function VerifyPage() {
   const [doc, setDoc] = useState<UploadedDocument | null>(null);
   const [selectedType, setSelectedType] = useState<DocumentType | "AUTO">("AUTO");
   const [step, setStep] = useState(-1);
+  const [ocr, setOcr] = useState<OcrProgress | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [lastJob, setLastJob] = useState<Job | null>(null);
   const objectUrl = useRef<string | null>(null);
 
   useEffect(() => {
@@ -57,28 +71,52 @@ function VerifyPage() {
     };
   }, []);
 
-  const process = useCallback(
-    async (input: Parameters<typeof extractDocument>[0]) => {
+  const run = useCallback(
+    async (job: Job) => {
       setError(null);
+      setLastJob(job);
+      setOcr(null);
       setStep(0);
       try {
-        const tick = (n: number, ms: number) =>
-          new Promise<void>((resolve) =>
-            window.setTimeout(() => {
-              setStep(n);
-              resolve();
-            }, ms),
-          );
+        let ocrResult;
+        let scenarioLabel: string | undefined;
+        let sourceFileName: string;
+        let typeForRun: DocumentType | "AUTO" = selectedType;
 
-        await tick(1, 550);
-        const { extracted } = await extractDocument(input);
-        await tick(2, 500);
-        await tick(3, 600);
+        const onProgress = (p: OcrProgress) => {
+          setOcr(p);
+          setStep(p.phase === "PREPROCESS" ? 1 : 2);
+        };
+
+        if (job.kind === "upload") {
+          sourceFileName = job.file.name;
+          setStep(1);
+          ocrResult = await ocrImageFile(job.file, onProgress);
+        } else {
+          const scenario = job.scenario;
+          scenarioLabel = scenario.scenarioLabel;
+          sourceFileName = `${scenario.title}.png`;
+          typeForRun = "AUTO";
+          setStep(1);
+          const row = await loadDemoRow(scenario);
+          const cardUrl = renderDemoCard({
+            documentType: scenario.documentType,
+            row,
+            printedOverride: scenario.printedOverride,
+            ...(row ? {} : { fallback: UNKNOWN_PERSON_CARD }),
+          });
+          ocrResult = await ocrDataUrl(cardUrl, onProgress);
+        }
+
+        setStep(3);
+        const { extracted } = extractFromOcr(ocrResult, typeForRun, sourceFileName, scenarioLabel);
+
+        setStep(4);
         const outcome = await runVerification(extracted);
-        await tick(4, 550);
-        await tick(5, 550);
+        setStep(5);
+        setStep(6);
         await saveVerification(outcome, session?.name ?? "Unknown officer");
-        await tick(PROCESSING_STEPS.length, 500);
+        setStep(PROCESSING_STEPS.length);
         await queryClient.invalidateQueries({ queryKey: ["verifications"] });
         void navigate({
           to: "/result/$verificationId",
@@ -86,10 +124,17 @@ function VerifyPage() {
         });
       } catch (e) {
         setStep(-1);
-        setError(e instanceof Error ? e.message : "Verification could not be completed.");
+        setOcr(null);
+        setError(
+          e instanceof OcrFieldError
+            ? e.message
+            : e instanceof Error
+              ? `OCR processing failed: ${e.message}`
+              : "OCR processing failed. Please try again with a clearer image.",
+        );
       }
     },
-    [navigate, queryClient, session],
+    [navigate, queryClient, selectedType, session],
   );
 
   const processing = step >= 0;
@@ -97,12 +142,16 @@ function VerifyPage() {
   return (
     <AppShell
       title="New verification"
-      description="Upload a citizen's government-issued identity document"
+      description="Upload a citizen's government-issued identity document — the image is read by OCR"
     >
       {processing ? (
         <div className="mx-auto max-w-2xl">
-          <Panel title="Verification in progress" description="Please wait while checks complete" icon={ScanLine}>
-            <ProcessingSteps current={step} />
+          <Panel title="Document processing" description="Reading the uploaded image" icon={ScanLine}>
+            <ProcessingSteps
+              current={step}
+              ocrProgress={ocr?.phase === "RECOGNISE" ? ocr.progress : undefined}
+              ocrStatus={ocr?.status}
+            />
           </Panel>
         </div>
       ) : (
@@ -130,10 +179,14 @@ function VerifyPage() {
                           : "border-border hover:border-primary/40 hover:bg-secondary",
                       )}
                     >
-                      {t === "AUTO" ? "Auto-detect" : DOCUMENT_LABELS[t]}
+                      {t === "AUTO" ? "Detect from document" : DOCUMENT_LABELS[t]}
                     </button>
                   ))}
                 </div>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Auto-detection reads the wording printed on the document. Select a type manually if
+                  detection fails.
+                </p>
               </div>
 
               {doc ? (
@@ -150,28 +203,10 @@ function VerifyPage() {
                   />
                   <button
                     type="button"
-                    onClick={() => {
-                      void (async () => {
-                        let imageDataUrl: string | undefined;
-                        if (doc.file.type.startsWith("image/")) {
-                          imageDataUrl = await new Promise<string>((resolve, reject) => {
-                            const reader = new FileReader();
-                            reader.onload = () => resolve(String(reader.result));
-                            reader.onerror = () => reject(new Error("File could not be read."));
-                            reader.readAsDataURL(doc.file);
-                          });
-                        }
-                        await process({
-                          kind: "upload",
-                          fileName: doc.file.name,
-                          selectedType,
-                          imageDataUrl,
-                        });
-                      })();
-                    }}
+                    onClick={() => void run({ kind: "upload", file: doc.file })}
                     className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
                   >
-                    <ShieldCheck className="size-4" /> Start verification
+                    <ShieldCheck className="size-4" /> Run OCR &amp; verify
                   </button>
                 </div>
               ) : (
@@ -184,19 +219,37 @@ function VerifyPage() {
               )}
 
               {error ? (
-                <p className="mt-4 flex items-start gap-2 rounded-lg border border-danger/30 bg-danger-soft px-3 py-2 text-sm text-danger">
-                  <AlertCircle className="mt-0.5 size-4 shrink-0" /> {error}
-                </p>
+                <div className="mt-4 rounded-lg border border-danger/30 bg-danger-soft px-3 py-3 text-sm text-danger">
+                  <p className="flex items-start gap-2">
+                    <AlertCircle className="mt-0.5 size-4 shrink-0" /> {error}
+                  </p>
+                  {lastJob ? (
+                    <button
+                      type="button"
+                      onClick={() => void run(lastJob)}
+                      className="mt-3 inline-flex items-center gap-2 rounded-lg border border-danger/40 px-3 py-1.5 text-xs font-medium"
+                    >
+                      <RotateCcw className="size-3.5" /> Retry OCR
+                    </button>
+                  ) : null}
+                  <p className="mt-2 text-xs">
+                    No demonstration values are ever substituted when OCR fails.
+                  </p>
+                </div>
               ) : null}
             </Panel>
 
-            <Panel title="Demonstration documents" description="Preloaded cases for a reliable walkthrough" icon={Sparkles}>
+            <Panel
+              title="Demonstration documents"
+              description="Card images generated from the reference records, then read by the same OCR engine"
+              icon={Sparkles}
+            >
               <div className="grid gap-3 sm:grid-cols-2">
                 {DEMO_SCENARIOS.map((s) => (
                   <button
                     key={s.id}
                     type="button"
-                    onClick={() => void process({ kind: "demo", scenarioId: s.id })}
+                    onClick={() => void run({ kind: "demo", scenario: s })}
                     className="rounded-xl border border-border px-4 py-3 text-left transition-colors hover:border-primary/40 hover:bg-info-soft"
                   >
                     <p className="text-sm font-medium">{s.title}</p>
@@ -208,14 +261,14 @@ function VerifyPage() {
           </div>
 
           <div className="space-y-6">
-            <Panel title="How this prototype works" icon={ShieldCheck}>
+            <Panel title="How this works" icon={ShieldCheck}>
               <ol className="space-y-3 text-sm text-muted-foreground">
                 {[
-                  "The uploaded file is accepted and its type is identified.",
-                  "Details are read from the uploaded image by an AI document reader.",
-                  "Values are compared field-by-field with the synthetic reference records.",
-                  "The citizen's other identity records are checked for conflicts.",
-                  "A transparent weighted risk score and decision are produced.",
+                  "The image is resized, converted to greyscale and contrast-corrected for reading.",
+                  "Tesseract OCR reads the text directly from those pixels.",
+                  "The document type and fields are parsed from that recognised text only.",
+                  "The matching reference record is searched using the values read from the document.",
+                  "Linked records for the matched person are checked and a risk score is produced.",
                 ].map((line, i) => (
                   <li key={line} className="flex gap-3">
                     <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-info-soft text-[11px] font-semibold text-primary">
@@ -229,9 +282,9 @@ function VerifyPage() {
 
             <Panel title="Important notice">
               <p className="text-sm text-muted-foreground">
-                Uploaded files stay in your browser and are never sent to a government system. Results are
-                produced from synthetic demonstration records only and must not be used for any real
-                identity decision.
+                OCR runs inside your browser — the image is never uploaded to a government system. If a
+                field cannot be read, it is reported as unreadable and never filled in from the
+                reference records. Results come from synthetic demonstration data only.
               </p>
             </Panel>
           </div>
