@@ -69,10 +69,7 @@ export async function getVerification(verificationId: string) {
       .select("*")
       .eq("verification_id", verificationId)
       .maybeSingle(),
-    supabase
-      .from("verification_field_results")
-      .select("*")
-      .eq("verification_id", verificationId),
+    supabase.from("verification_field_results").select("*").eq("verification_id", verificationId),
     supabase
       .from("verification_events")
       .select("*")
@@ -147,7 +144,10 @@ export async function saveVerification(outcome: VerificationOutcome, officerName
   }
 
   const events = [
-    { event_type: "DOCUMENT_UPLOADED", description: `Document received: ${outcome.extracted.sourceFileName}` },
+    {
+      event_type: "DOCUMENT_UPLOADED",
+      description: `Document received: ${outcome.extracted.sourceFileName}`,
+    },
     {
       event_type: "OCR_COMPLETED",
       description: `Tesseract OCR read the image with ${outcome.extracted.ocrConfidence ?? 0}% average word confidence`,

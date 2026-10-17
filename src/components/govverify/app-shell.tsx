@@ -56,16 +56,31 @@ export function AppShell({
 
   const sidebar = (
     <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
-      <div className="flex items-center gap-3 px-5 py-5">
-        <div className="flex size-9 items-center justify-center rounded-lg bg-sidebar-primary/15 ring-1 ring-sidebar-border">
-          <ShieldCheck className="size-5 text-sidebar-primary" />
+      <div className="border-b border-sidebar-border/70 px-5 py-5">
+        <div className="flex items-center gap-3">
+          <div className="flex size-9 items-center justify-center rounded-lg bg-sidebar-primary/20 ring-1 ring-sidebar-border">
+            <ShieldCheck className="size-5 text-sidebar-primary" />
+          </div>
+          <div className="leading-tight">
+            <p className="text-base font-semibold tracking-tight">GovVerify</p>
+            <p className="text-[11px] font-medium text-sidebar-foreground/70">
+              Identity Verification Portal
+            </p>
+          </div>
         </div>
-        <div className="leading-tight">
-          <p className="text-sm font-semibold tracking-tight">GovVerify</p>
-          <p className="text-[11px] text-sidebar-foreground/60">Verification Portal</p>
+        <div className="mt-3.5 flex items-center gap-1.5 rounded-md bg-sidebar-accent/50 px-2.5 py-1 text-[11px] font-medium text-sidebar-foreground/80">
+          <span className="size-1.5 rounded-full bg-emerald-400" />
+          <span>Local Prototype • Synthetic DB</span>
         </div>
       </div>
-      <nav className="flex-1 space-y-1 px-3 py-2">
+
+      <div className="px-3 pt-3 pb-1">
+        <p className="px-3 text-[10px] font-semibold tracking-wider text-sidebar-foreground/50 uppercase">
+          Navigation
+        </p>
+      </div>
+
+      <nav className="flex-1 space-y-1 px-3 py-1">
         {NAV.map((item) => {
           const active = pathname === item.to || pathname.startsWith(`${item.to}/`);
           return (
@@ -73,26 +88,39 @@ export function AppShell({
               key={item.to}
               to={item.to}
               className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors",
+                "group flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-all",
                 active
-                  ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-                  : "text-sidebar-foreground/75 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground",
+                  ? "bg-sidebar-accent font-semibold text-sidebar-accent-foreground shadow-xs ring-1 ring-sidebar-border/80"
+                  : "text-sidebar-foreground/80 hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground",
               )}
             >
-              <item.icon className="size-4.5 shrink-0" />
-              {item.label}
+              <item.icon
+                className={cn(
+                  "size-4 shrink-0 transition-colors",
+                  active
+                    ? "text-sidebar-primary"
+                    : "text-sidebar-foreground/60 group-hover:text-sidebar-foreground",
+                )}
+              />
+              <span className="truncate">{item.label}</span>
+              {active ? (
+                <span className="ml-auto size-1.5 rounded-full bg-sidebar-primary" />
+              ) : null}
             </Link>
           );
         })}
       </nav>
-      <div className="border-t border-sidebar-border p-3">
-        <div className="flex items-center gap-3 rounded-lg px-2 py-2">
-          <div className="flex size-9 items-center justify-center rounded-full bg-sidebar-accent text-xs font-semibold">
+
+      <div className="border-t border-sidebar-border/80 p-3">
+        <div className="flex items-center gap-3 rounded-lg bg-sidebar-accent/40 px-3 py-2.5">
+          <div className="flex size-8 items-center justify-center rounded-full bg-sidebar-accent text-xs font-semibold ring-1 ring-sidebar-border">
             {initials(session.name)}
           </div>
-          <div className="min-w-0 leading-tight">
-            <p className="truncate text-sm font-medium">{session.name}</p>
-            <p className="truncate text-[11px] text-sidebar-foreground/60">{session.role}</p>
+          <div className="min-w-0 flex-1 leading-tight">
+            <p className="truncate text-xs font-semibold">{session.name}</p>
+            <p className="truncate text-[10px] text-sidebar-foreground/70">
+              {session.role} · {session.staffId}
+            </p>
           </div>
         </div>
         <button
@@ -101,10 +129,10 @@ export function AppShell({
             signOut();
             void navigate({ to: "/", replace: true });
           }}
-          className="mt-1 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground"
+          className="mt-2 flex w-full items-center justify-center gap-2 rounded-md border border-sidebar-border/60 bg-transparent px-3 py-2 text-xs font-medium text-sidebar-foreground/80 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
         >
-          <LogOut className="size-4.5" />
-          Sign out
+          <LogOut className="size-3.5" />
+          Sign out session
         </button>
       </div>
     </div>
@@ -121,51 +149,47 @@ export function AppShell({
           <button
             type="button"
             aria-label="Close navigation"
-            className="absolute inset-0 bg-foreground/40"
+            className="absolute inset-0 bg-foreground/50 backdrop-blur-xs"
             onClick={() => setMobileOpen(false)}
           />
-          <div className="absolute inset-y-0 left-0 w-64 shadow-xl">{sidebar}</div>
+          <div className="absolute inset-y-0 left-0 w-64 shadow-2xl">{sidebar}</div>
         </div>
       ) : null}
 
       <div className="lg:pl-64">
-        <header className="no-print sticky top-0 z-30 border-b border-border bg-card/85 backdrop-blur">
-          <div className="flex items-center gap-4 px-4 py-4 sm:px-6 lg:px-8">
+        <header className="no-print sticky top-0 z-30 border-b border-border bg-card/90 backdrop-blur-md">
+          <div className="flex items-center gap-4 px-4 py-3.5 sm:px-6 lg:px-8">
             <button
               type="button"
-              className="rounded-md border border-border p-2 lg:hidden"
+              className="rounded-md border border-border bg-background p-2 transition-colors hover:bg-secondary lg:hidden"
               onClick={() => setMobileOpen(true)}
               aria-label="Open navigation"
             >
               <Menu className="size-4" />
             </button>
             <div className="min-w-0 flex-1">
-              <h1 className="truncate text-lg font-semibold tracking-tight sm:text-xl">{title}</h1>
+              <h1 className="truncate text-base font-semibold tracking-tight sm:text-lg">
+                {title}
+              </h1>
               {description ? (
-                <p className="truncate text-sm text-muted-foreground">{description}</p>
+                <p className="truncate text-xs text-muted-foreground">{description}</p>
               ) : null}
             </div>
-            <div className="flex items-center gap-3">
-              {actions}
-              <div className="hidden items-center gap-3 rounded-lg border border-border bg-background px-3 py-2 md:flex">
-                <div className="flex size-8 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
-                  {initials(session.name)}
-                </div>
-                <div className="leading-tight">
-                  <p className="text-sm font-medium">{session.name}</p>
-                  <p className="text-[11px] text-muted-foreground">
-                    {session.role} · {session.staffId}
-                  </p>
-                </div>
+            <div className="flex items-center gap-2.5">
+              <div className="hidden items-center gap-2 rounded-md border border-border bg-secondary/40 px-2.5 py-1 text-xs text-muted-foreground sm:flex">
+                <span className="size-2 rounded-full bg-emerald-500" />
+                <span className="font-medium text-foreground/80">Registry Online</span>
               </div>
+              {actions}
             </div>
           </div>
         </header>
 
         <main className="px-4 py-6 sm:px-6 lg:px-8">{children}</main>
 
-        <footer className="border-t border-border px-4 py-5 text-center text-xs text-muted-foreground sm:px-6 lg:px-8">
-          GovVerify Prototype • Synthetic Data Environment • Not connected to government databases
+        <footer className="border-t border-border/80 bg-card/40 px-4 py-4 text-center text-xs text-muted-foreground sm:px-6 lg:px-8">
+          GovVerify Prototype · Government Identity Verification &amp; Risk Assessment System ·
+          Running on synthetic reference datasets
         </footer>
       </div>
     </div>

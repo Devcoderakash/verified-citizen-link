@@ -36,18 +36,31 @@ const DOC_TYPES: DocumentType[] = ["AADHAAR", "PAN", "VOTER_ID", "DRIVING_LICENC
 const RISK_LEVELS: RiskLevel[] = ["LOW", "MEDIUM", "HIGH", "CRITICAL"];
 const STATUSES: VerificationStatus[] = ["VERIFIED", "REVIEW_REQUIRED", "HIGH_RISK", "NO_RECORD"];
 
-function Bar({ label, value, total, tone }: { label: string; value: number; total: number; tone: string }) {
+function Bar({
+  label,
+  value,
+  total,
+  tone,
+}: {
+  label: string;
+  value: number;
+  total: number;
+  tone: string;
+}) {
   const pct = total ? Math.round((value / total) * 100) : 0;
   return (
-    <div>
-      <div className="mb-1.5 flex items-center justify-between text-sm">
-        <span className="capitalize">{label}</span>
+    <div className="group rounded-md p-1.5 transition-colors hover:bg-secondary/30">
+      <div className="mb-1.5 flex items-center justify-between text-xs font-medium">
+        <span className="font-semibold text-foreground">{label}</span>
         <span className="tabular-nums text-muted-foreground">
-          {value} · {pct}%
+          {value} <span className="text-[11px] text-muted-foreground/80">({pct}%)</span>
         </span>
       </div>
-      <div className="h-2.5 w-full overflow-hidden rounded-full bg-muted">
-        <div className={cn("h-full rounded-full transition-all duration-700", tone)} style={{ width: `${pct}%` }} />
+      <div className="h-2 w-full overflow-hidden rounded-full bg-secondary">
+        <div
+          className={cn("h-full rounded-full transition-all duration-700", tone)}
+          style={{ width: `${pct}%` }}
+        />
       </div>
     </div>
   );
@@ -69,46 +82,57 @@ function ReportsPage() {
   }
   const topReasons = [...reasonCounts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 6);
   const flagged = rows.filter((r) => r.verification_status !== "VERIFIED").length;
-  const avgRisk = total ? Math.round(rows.reduce((s, r) => s + Number(r.risk_score), 0) / total) : 0;
+  const avgRisk = total
+    ? Math.round(rows.reduce((s, r) => s + Number(r.risk_score), 0) / total)
+    : 0;
 
   return (
-    <AppShell title="Reports & analytics" description="Aggregated outcomes across recorded verifications">
+    <AppShell
+      title="Verification Risk &amp; Outcome Analytics"
+      description="Aggregated compliance metrics across all processed identity records"
+    >
       {isLoading ? (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {[0, 1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="h-40 animate-pulse rounded-xl bg-muted" />
+            <div key={i} className="h-36 animate-pulse rounded-md bg-muted" />
           ))}
         </div>
       ) : total === 0 ? (
         <Panel>
           <EmptyState
             icon={FileBarChart2}
-            title="No data to report yet"
-            description="Analytics appear once verifications have been recorded in this workspace."
+            title="No Analytics Data Available"
+            description="Inspection metrics will populate as documents are verified in this workstation."
           />
         </Panel>
       ) : (
         <div className="space-y-6">
           <div className="grid gap-4 sm:grid-cols-3">
-            <StatCard label="Verifications analysed" value={total} icon={FileBarChart2} />
             <StatCard
-              label="Flagged outcomes"
+              label="Total Inspections Analysed"
+              value={total}
+              icon={FileBarChart2}
+              hint="All recorded verification cycles"
+            />
+            <StatCard
+              label="Audit Rate (Flagged)"
               value={flagged}
               icon={TrendingUp}
               tone={flagged ? "warning" : "success"}
-              hint="Anything other than verified"
+              hint={`${total ? Math.round((flagged / total) * 100) : 0}% of all processed cases`}
             />
             <StatCard
-              label="Average risk score"
+              label="Weighted Risk Average"
               value={avgRisk}
               icon={BarChart3}
               tone={avgRisk > 50 ? "danger" : avgRisk > 25 ? "warning" : "success"}
+              hint="Out of 100 maximum risk threshold"
             />
           </div>
 
           <div className="grid gap-6 lg:grid-cols-2">
-            <Panel title="Outcome distribution" icon={PieChart}>
-              <div className="space-y-4">
+            <Panel title="Outcome Status Distribution" icon={PieChart}>
+              <div className="space-y-2">
                 {STATUSES.map((s) => (
                   <Bar
                     key={s}
@@ -129,28 +153,22 @@ function ReportsPage() {
               </div>
             </Panel>
 
-            <Panel title="Risk level distribution" icon={BarChart3}>
-              <div className="space-y-4">
+            <Panel title="Risk Severity Breakdown" icon={BarChart3}>
+              <div className="space-y-2">
                 {RISK_LEVELS.map((l) => (
                   <Bar
                     key={l}
                     label={RISK_LABEL[l]}
                     value={rows.filter((r) => r.risk_level === l).length}
                     total={total}
-                    tone={
-                      l === "LOW"
-                        ? "bg-success"
-                        : l === "MEDIUM"
-                          ? "bg-warning"
-                          : "bg-danger"
-                    }
+                    tone={l === "LOW" ? "bg-success" : l === "MEDIUM" ? "bg-warning" : "bg-danger"}
                   />
                 ))}
               </div>
             </Panel>
 
-            <Panel title="Document types verified" icon={FileBarChart2}>
-              <div className="space-y-4">
+            <Panel title="Document Mix Verified" icon={FileBarChart2}>
+              <div className="space-y-2">
                 {DOC_TYPES.map((t) => (
                   <Bar
                     key={t}
@@ -163,21 +181,31 @@ function ReportsPage() {
               </div>
             </Panel>
 
-            <Panel title="Most common risk signals" icon={TrendingUp}>
+            <Panel title="Top Risk Signals Triggered" icon={TrendingUp}>
               {topReasons.length ? (
                 <ul className="space-y-2">
-                  {topReasons.map(([label, count]) => (
+                  {topReasons.map(([label, count], idx) => (
                     <li
                       key={label}
-                      className="flex items-center justify-between gap-4 rounded-lg border border-border bg-secondary/40 px-3 py-2.5 text-sm"
+                      className="flex items-center justify-between gap-4 rounded-md border border-border bg-card p-3 text-xs transition-colors hover:bg-secondary/30"
                     >
-                      <span>{label}</span>
-                      <span className="tabular-nums text-muted-foreground">{count}</span>
+                      <div className="flex items-center gap-2.5">
+                        <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-secondary font-mono text-[10px] font-bold text-muted-foreground">
+                          {idx + 1}
+                        </span>
+                        <span className="font-medium text-foreground">{label}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="tabular-nums font-semibold text-foreground">{count}</span>
+                        <span className="text-[11px] text-muted-foreground">
+                          ({total ? Math.round((count / total) * 100) : 0}%)
+                        </span>
+                      </div>
                     </li>
                   ))}
                 </ul>
               ) : (
-                <p className="text-sm text-muted-foreground">
+                <p className="text-xs text-muted-foreground">
                   No risk signals have been raised in the recorded verifications.
                 </p>
               )}

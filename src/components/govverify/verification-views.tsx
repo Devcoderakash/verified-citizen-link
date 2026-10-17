@@ -36,31 +36,41 @@ export function FieldComparison({
   }
   return (
     <div className="overflow-x-auto">
-      <table className="w-full min-w-[640px] text-sm">
+      <table className="w-full min-w-[640px] text-xs sm:text-sm">
         <thead>
-          <tr className="border-b border-border text-left text-xs tracking-wide text-muted-foreground uppercase">
-            <th className="py-2 pr-4 font-medium">Field</th>
-            <th className="py-2 pr-4 font-medium">Extracted from document</th>
-            <th className="py-2 pr-4 font-medium">Reference record</th>
-            <th className="py-2 pr-4 font-medium">Result</th>
-            <th className="py-2 font-medium">Confidence</th>
+          <tr className="border-b border-border/80 bg-secondary/20 text-left text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
+            <th className="px-4 py-3">Credential Field</th>
+            <th className="px-4 py-3">Extracted via OCR</th>
+            <th className="px-4 py-3">Reference Record</th>
+            <th className="px-4 py-3">Verification State</th>
+            <th className="px-4 py-3 text-right">Confidence</th>
           </tr>
         </thead>
-        <tbody>
+        <tbody className="divide-y divide-border/60">
           {fields.map((f) => {
             const mask = SENSITIVE_FIELDS.has(f.field_name);
             const show = (v: string | null) =>
               v ? (mask ? maskNumber(documentType, v) : isDate(v) ? formatDate(v) : v) : "—";
             return (
-              <tr key={f.field_name} className="border-b border-border/60 last:border-0">
-                <td className="py-3 pr-4 font-medium">{f.field_name}</td>
-                <td className="py-3 pr-4 text-muted-foreground">{show(f.extracted_value)}</td>
-                <td className="py-3 pr-4 text-muted-foreground">{show(f.database_value)}</td>
-                <td className="py-3 pr-4">
+              <tr key={f.field_name} className="transition-colors hover:bg-secondary/20">
+                <td className="px-4 py-3 font-semibold text-foreground">{f.field_name}</td>
+                <td className="px-4 py-3 text-muted-foreground">
+                  <span className="font-mono text-xs">{show(f.extracted_value)}</span>
+                </td>
+                <td className="px-4 py-3 text-muted-foreground">
+                  <span className="font-mono text-xs">{show(f.database_value)}</span>
+                </td>
+                <td className="px-4 py-3">
                   <MatchBadge status={f.match_status} />
                 </td>
-                <td className="py-3 tabular-nums text-muted-foreground">
-                  {f.confidence === null ? "—" : `${Math.round(Number(f.confidence))}%`}
+                <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">
+                  {f.confidence === null ? (
+                    <span className="text-muted-foreground/60">—</span>
+                  ) : (
+                    <span className="font-semibold text-foreground">
+                      {Math.round(Number(f.confidence))}%
+                    </span>
+                  )}
                 </td>
               </tr>
             );
@@ -144,13 +154,8 @@ export function RiskScoreCard({
   reasons: RiskReason[];
 }) {
   const tone =
-    level === "LOW"
-      ? "text-success"
-      : level === "MEDIUM"
-        ? "text-warning"
-        : "text-danger";
-  const bar =
-    level === "LOW" ? "bg-success" : level === "MEDIUM" ? "bg-warning" : "bg-danger";
+    level === "LOW" ? "text-success" : level === "MEDIUM" ? "text-warning" : "text-danger";
+  const bar = level === "LOW" ? "bg-success" : level === "MEDIUM" ? "bg-warning" : "bg-danger";
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-end gap-x-6 gap-y-3">
@@ -183,7 +188,9 @@ export function RiskScoreCard({
                     <span className="block text-xs text-muted-foreground">{r.detail}</span>
                   ) : null}
                 </span>
-                <span className="shrink-0 font-mono text-xs text-muted-foreground">+{r.weight}</span>
+                <span className="shrink-0 font-mono text-xs text-muted-foreground">
+                  +{r.weight}
+                </span>
               </li>
             ))}
           </ul>
@@ -232,9 +239,7 @@ export function Timeline({
           <p className="text-sm font-medium capitalize">
             {e.event_type.toLowerCase().replace(/_/g, " ")}
           </p>
-          {e.description ? (
-            <p className="text-sm text-muted-foreground">{e.description}</p>
-          ) : null}
+          {e.description ? <p className="text-sm text-muted-foreground">{e.description}</p> : null}
           <p className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
             <Clock className="size-3" />
             {new Date(e.created_at).toLocaleTimeString("en-GB", {
@@ -258,33 +263,47 @@ export function DecisionBanner({
 }) {
   const config = {
     VERIFIED: {
-      title: "Verified",
-      className: "border-success/30 bg-success-soft text-success",
+      title: "Identity Verified — Compliant with Reference Record",
+      badge: "VERIFIED",
+      className: "border-success/40 bg-success-soft text-success",
       Icon: CheckCircle2,
     },
     REVIEW_REQUIRED: {
-      title: "Manual review required",
-      className: "border-warning/40 bg-warning-soft text-warning",
+      title: "Manual Inspection Advised — Discrepancies Noted",
+      badge: "AUDIT REQUIRED",
+      className: "border-warning/50 bg-warning-soft text-warning",
       Icon: AlertTriangle,
     },
     HIGH_RISK: {
-      title: "High risk — manual review required",
-      className: "border-danger/40 bg-danger-soft text-danger",
+      title: "Elevated Risk Flag — Inconsistencies Detected",
+      badge: "HIGH RISK",
+      className: "border-danger/50 bg-danger-soft text-danger",
       Icon: FileWarning,
     },
     NO_RECORD: {
-      title: "Identity record not found",
-      className: "border-border bg-muted text-foreground",
+      title: "No Matching Citizen Record in Synthetic Registry",
+      badge: "UNREGISTERED",
+      className: "border-border bg-secondary text-foreground",
       Icon: ShieldQuestion,
     },
   }[status];
 
   return (
-    <div className={cn("gv-rise flex items-start gap-4 rounded-xl border px-5 py-4", config.className)}>
+    <div
+      className={cn(
+        "gv-rise flex items-start gap-4 rounded-lg border p-4 sm:p-5 shadow-2xs",
+        config.className,
+      )}
+    >
       <config.Icon className="mt-0.5 size-6 shrink-0" />
-      <div>
-        <p className="text-base font-semibold">{config.title}</p>
-        <p className="mt-1 text-sm opacity-90">{decision}</p>
+      <div className="flex-1">
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="text-base font-bold tracking-tight">{config.title}</p>
+          <span className="rounded border border-current/30 px-1.5 py-0.2 text-[10px] font-mono font-bold uppercase">
+            {config.badge}
+          </span>
+        </div>
+        <p className="mt-1 text-xs sm:text-sm opacity-90 leading-relaxed">{decision}</p>
       </div>
       <ArrowRight className="ml-auto hidden size-5 opacity-40 sm:block" />
     </div>

@@ -94,53 +94,71 @@ function ResultPage() {
 
   return (
     <AppShell
-      title="Verification report"
-      description={`${record.verification_id} · ${formatDateTime(record.created_at)}`}
+      title="Identity Inspection Dossier"
+      description={`Official Audit Reference: ${record.verification_id} · Recorded: ${formatDateTime(record.created_at)}`}
       actions={
         <div className="flex items-center gap-2">
           <Link
             to="/history"
-            className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2.5 text-sm font-medium transition-colors hover:bg-secondary"
+            className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-border bg-card px-3 py-2 text-xs font-semibold text-foreground shadow-2xs transition-colors hover:bg-secondary"
           >
-            <ArrowLeft className="size-4" /> History
+            <ArrowLeft className="size-3.5" />
+            <span>Archive</span>
           </Link>
           <button
             type="button"
             onClick={() => window.print()}
-            className="inline-flex items-center gap-2 rounded-lg bg-primary px-3.5 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            className="inline-flex cursor-pointer items-center gap-1.5 rounded-md bg-primary px-3.5 py-2 text-xs font-semibold text-primary-foreground shadow-xs transition-colors hover:bg-primary/90"
           >
-            <Printer className="size-4" /> Print report
+            <Printer className="size-3.5" />
+            <span>Print Audit Certificate</span>
           </button>
         </div>
       }
     >
       <div className="space-y-6">
-        <DecisionBanner status={record.verification_status} decision={events.find((e) => e.event_type === "FINAL_DECISION")?.description ?? "Verification completed."} />
+        <DecisionBanner
+          status={record.verification_status}
+          decision={
+            events.find((e) => e.event_type === "FINAL_DECISION")?.description ??
+            "Verification completed."
+          }
+        />
 
         <div className="grid gap-6 lg:grid-cols-2">
           <Panel
-            title="Document information (read by OCR)"
-            description="Values recognised from the uploaded image only"
+            title="Extracted Document Data (OCR Ingestion)"
+            description="Optical character recognition values parsed directly from image pixels"
             icon={ScanText}
           >
-            <div className="flex items-start gap-4">
-              <div className="flex size-14 shrink-0 items-center justify-center rounded-xl bg-primary text-base font-semibold text-primary-foreground">
+            <div className="flex items-start gap-3.5">
+              <div className="flex size-12 shrink-0 items-center justify-center rounded-lg bg-primary text-sm font-bold text-primary-foreground shadow-2xs">
                 {initials(extracted.name ?? "NA")}
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-lg font-semibold tracking-tight">{extracted.name || "Unreadable"}</p>
-                <p className="text-sm text-muted-foreground">
-                  {DOCUMENT_LABELS[record.document_type]} ·{" "}
-                  {maskNumber(record.document_type, extracted.documentNumber)}
+                <p className="text-base font-bold tracking-tight text-foreground">
+                  {extracted.name || "Unreadable Name"}
                 </p>
+                <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                  <span className="rounded border border-border bg-secondary/80 px-1.5 py-0.5 font-mono text-[11px] text-foreground">
+                    {DOCUMENT_LABELS[record.document_type]}
+                  </span>
+                  <span>•</span>
+                  <span className="font-mono">
+                    {maskNumber(record.document_type, extracted.documentNumber)}
+                  </span>
+                </div>
               </div>
             </div>
-            <div className="mt-4">
-              <FieldRow label="Date of birth" value={extracted.dob ? formatDate(extracted.dob) : "Not read"} />
-              <FieldRow label="Gender" value={extracted.gender ?? "Not read"} />
-              <FieldRow label="Address" value={extracted.address ?? "Not read"} />
+            <div className="mt-4 space-y-0.5">
               <FieldRow
-                label="Validity printed"
+                label="Date of Birth"
+                value={extracted.dob ? formatDate(extracted.dob) : "Not Detected"}
+              />
+              <FieldRow label="Gender" value={extracted.gender ?? "Not Detected"} />
+              <FieldRow label="Physical Address" value={extracted.address ?? "Not Detected"} />
+              <FieldRow
+                label="Printed Validity"
                 value={
                   extracted.expiryDate
                     ? `${formatDate(extracted.issueDate)} → ${formatDate(extracted.expiryDate)}`
@@ -148,18 +166,19 @@ function ResultPage() {
                 }
               />
               <FieldRow
-                label="OCR confidence"
+                label="OCR Confidence Index"
                 value={
                   typeof extracted.ocrConfidence === "number"
-                    ? `${extracted.ocrConfidence}% average word confidence`
+                    ? `${extracted.ocrConfidence}% mean word recognition`
                     : "—"
                 }
               />
             </div>
             {extracted.missingFields?.length ? (
-              <p className="mt-3 rounded-lg border border-warning/30 bg-warning-soft px-3 py-2 text-xs text-warning-foreground">
-                OCR could not read: {extracted.missingFields.join(", ")}. These values were left blank —
-                nothing was filled in from the reference records.
+              <p className="mt-3 rounded-md border border-warning/30 bg-warning-soft p-3 text-xs text-warning-foreground leading-relaxed">
+                <strong className="font-semibold">Omission Notice:</strong> OCR could not extract
+                fields: {extracted.missingFields.join(", ")}. These fields remain unpopulated in
+                accordance with audit integrity rules.
               </p>
             ) : null}
           </Panel>
@@ -183,7 +202,10 @@ function ResultPage() {
             {hasRecord ? (
               <div>
                 <FieldRow label="Person ID" value={record.person_id ?? "—"} mono />
-                <FieldRow label="Name on record" value={dbValue("Name") ?? record.citizen_name ?? "—"} />
+                <FieldRow
+                  label="Name on record"
+                  value={dbValue("Name") ?? record.citizen_name ?? "—"}
+                />
                 <FieldRow label="Date of birth" value={dbValue("Date of Birth") ?? "—"} />
                 <FieldRow label="Document number" value={dbValue("Document Number") ?? "—"} mono />
                 <FieldRow label="Address" value={dbValue("Address") ?? "—"} />
@@ -193,8 +215,9 @@ function ResultPage() {
               <div className="rounded-lg border border-danger/30 bg-danger-soft px-3 py-3 text-sm text-danger">
                 <p className="font-semibold">Identity record not found</p>
                 <p className="mt-1">
-                  The extracted document information could not be matched with the available synthetic
-                  verification records. No other person's details are shown in place of this document.
+                  The extracted document information could not be matched with the available
+                  synthetic verification records. No other person's details are shown in place of
+                  this document.
                 </p>
               </div>
             )}
@@ -237,7 +260,11 @@ function ResultPage() {
         </div>
 
         {extracted.ocrText ? (
-          <Panel title="Raw OCR output" description="Exact text recognised from the image" icon={ScanText}>
+          <Panel
+            title="Raw OCR output"
+            description="Exact text recognised from the image"
+            icon={ScanText}
+          >
             <details>
               <summary className="cursor-pointer text-sm font-medium text-primary">
                 Show recognised text
@@ -253,7 +280,10 @@ function ResultPage() {
           <FieldRow label="Verification ID" value={record.verification_id} mono />
           <FieldRow label="Performed by" value={record.officer_name ?? "—"} />
           <FieldRow label="Source file" value={record.source_file_name ?? "—"} />
-          <FieldRow label="Extraction method" value="Tesseract OCR (in-browser, real text recognition)" />
+          <FieldRow
+            label="Extraction method"
+            value="Tesseract OCR (in-browser, real text recognition)"
+          />
           <FieldRow
             label="Document type detection"
             value={
@@ -264,15 +294,17 @@ function ResultPage() {
           />
           <FieldRow
             label="OCR duration"
-            value={extracted.ocrDurationMs ? `${(extracted.ocrDurationMs / 1000).toFixed(1)} s` : "—"}
+            value={
+              extracted.ocrDurationMs ? `${(extracted.ocrDurationMs / 1000).toFixed(1)} s` : "—"
+            }
           />
           <FieldRow label="Face verification" value="Not available in this prototype" />
           <FieldRow label="Tamper detection" value="Not available in this prototype" />
         </Panel>
 
         <p className="text-center text-xs text-muted-foreground">
-          Generated by the GovVerify prototype from synthetic demonstration data. This report is not an
-          official government verification and must not be used for any real identity decision.
+          Generated by the GovVerify prototype from synthetic demonstration data. This report is not
+          an official government verification and must not be used for any real identity decision.
         </p>
       </div>
     </AppShell>

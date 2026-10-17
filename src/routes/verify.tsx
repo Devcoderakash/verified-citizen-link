@@ -49,9 +49,7 @@ const TYPE_OPTIONS: (DocumentType | "AUTO")[] = [
   "DRIVING_LICENCE",
 ];
 
-type Job =
-  | { kind: "upload"; file: File }
-  | { kind: "demo"; scenario: DemoScenario };
+type Job = { kind: "upload"; file: File } | { kind: "demo"; scenario: DemoScenario };
 
 function VerifyPage() {
   const { session } = useAuth();
@@ -146,7 +144,11 @@ function VerifyPage() {
     >
       {processing ? (
         <div className="mx-auto max-w-2xl">
-          <Panel title="Document processing" description="Reading the uploaded image" icon={ScanLine}>
+          <Panel
+            title="Document processing"
+            description="Reading the uploaded image"
+            icon={ScanLine}
+          >
             <ProcessingSteps
               current={step}
               ocrProgress={ocr?.phase === "RECOGNISE" ? ocr.progress : undefined}
@@ -158,35 +160,50 @@ function VerifyPage() {
         <div className="grid gap-6 lg:grid-cols-3">
           <div className="space-y-6 lg:col-span-2">
             <Panel
-              title="Document upload"
-              description="Aadhaar Card, PAN Card, Voter ID or Driving Licence"
+              title="Document Intake &amp; Inspection"
+              description="Aadhaar Card, PAN Card, Voter ID (EPIC) or Driving Licence"
               icon={FileCheck2}
             >
               <div className="mb-5">
-                <p className="mb-2 text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                  Document type
-                </p>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-semibold tracking-wide text-foreground uppercase">
+                    Select Document Type
+                  </p>
+                  <span className="text-[11px] text-muted-foreground">
+                    Auto-detection active by default
+                  </span>
+                </div>
+
+                <div className="mt-2.5 grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-5">
                   {TYPE_OPTIONS.map((t) => (
                     <button
                       key={t}
                       type="button"
                       onClick={() => setSelectedType(t)}
                       className={cn(
-                        "rounded-lg border px-3 py-2 text-sm transition-colors",
+                        "flex cursor-pointer flex-col items-center justify-center rounded-md border p-2.5 text-center transition-all",
                         selectedType === t
-                          ? "border-primary bg-info-soft font-medium text-primary"
-                          : "border-border hover:border-primary/40 hover:bg-secondary",
+                          ? "border-primary bg-primary/10 font-semibold text-primary shadow-2xs ring-1 ring-primary/40"
+                          : "border-border bg-card text-muted-foreground hover:border-primary/40 hover:bg-secondary/60 hover:text-foreground",
                       )}
                     >
-                      {t === "AUTO" ? "Detect from document" : DOCUMENT_LABELS[t]}
+                      <span className="text-xs">
+                        {t === "AUTO" ? "Auto Detect" : DOCUMENT_LABELS[t]}
+                      </span>
+                      <span className="mt-0.5 text-[10px] text-muted-foreground/80">
+                        {t === "AUTO"
+                          ? "From text header"
+                          : t === "AADHAAR"
+                            ? "12-digit UID"
+                            : t === "PAN"
+                              ? "10-char alphanumeric"
+                              : t === "VOTER_ID"
+                                ? "EPIC Card"
+                                : "State DL Series"}
+                      </span>
                     </button>
                   ))}
                 </div>
-                <p className="mt-2 text-xs text-muted-foreground">
-                  Auto-detection reads the wording printed on the document. Select a type manually if
-                  detection fails.
-                </p>
               </div>
 
               {doc ? (
@@ -204,9 +221,10 @@ function VerifyPage() {
                   <button
                     type="button"
                     onClick={() => void run({ kind: "upload", file: doc.file })}
-                    className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+                    className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-md bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground shadow-xs transition-colors hover:bg-primary/90"
                   >
-                    <ShieldCheck className="size-4" /> Run OCR &amp; verify
+                    <ShieldCheck className="size-4" /> Run Optical Character Recognition &amp;
+                    Verify
                   </button>
                 </div>
               ) : (
@@ -219,41 +237,57 @@ function VerifyPage() {
               )}
 
               {error ? (
-                <div className="mt-4 rounded-lg border border-danger/30 bg-danger-soft px-3 py-3 text-sm text-danger">
-                  <p className="flex items-start gap-2">
+                <div className="mt-4 rounded-md border border-danger/30 bg-danger-soft p-3.5 text-xs text-danger">
+                  <p className="flex items-start gap-2 font-medium">
                     <AlertCircle className="mt-0.5 size-4 shrink-0" /> {error}
                   </p>
                   {lastJob ? (
                     <button
                       type="button"
                       onClick={() => void run(lastJob)}
-                      className="mt-3 inline-flex items-center gap-2 rounded-lg border border-danger/40 px-3 py-1.5 text-xs font-medium"
+                      className="mt-3 inline-flex cursor-pointer items-center gap-2 rounded-md border border-danger/40 bg-card px-3 py-1.5 text-xs font-semibold text-danger shadow-2xs hover:bg-danger-soft"
                     >
-                      <RotateCcw className="size-3.5" /> Retry OCR
+                      <RotateCcw className="size-3.5" /> Re-attempt OCR Run
                     </button>
                   ) : null}
-                  <p className="mt-2 text-xs">
-                    No demonstration values are ever substituted when OCR fails.
+                  <p className="mt-2 text-[11px] text-danger/80">
+                    Audit guarantee: No synthetic placeholders are substituted when OCR cannot
+                    extract a field.
                   </p>
                 </div>
               ) : null}
             </Panel>
 
             <Panel
-              title="Demonstration documents"
-              description="Card images generated from the reference records, then read by the same OCR engine"
+              title="Demonstration Test Scenarios"
+              description="Synthetically generated physical ID cards for instant audit testing"
               icon={Sparkles}
             >
-              <div className="grid gap-3 sm:grid-cols-2">
+              <div className="grid gap-2.5 sm:grid-cols-2">
                 {DEMO_SCENARIOS.map((s) => (
                   <button
                     key={s.id}
                     type="button"
                     onClick={() => void run({ kind: "demo", scenario: s })}
-                    className="rounded-xl border border-border px-4 py-3 text-left transition-colors hover:border-primary/40 hover:bg-info-soft"
+                    className="group flex cursor-pointer flex-col justify-between rounded-md border border-border bg-card p-3.5 text-left transition-all hover:border-primary/50 hover:bg-secondary/40 hover:shadow-2xs"
                   >
-                    <p className="text-sm font-medium">{s.title}</p>
-                    <p className="mt-0.5 text-xs text-muted-foreground">{s.subtitle}</p>
+                    <div>
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-xs font-semibold text-foreground group-hover:text-primary">
+                          {s.title}
+                        </span>
+                        <span className="rounded border border-border bg-secondary/80 px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground">
+                          {DOCUMENT_LABELS[s.documentType]}
+                        </span>
+                      </div>
+                      <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
+                        {s.subtitle}
+                      </p>
+                    </div>
+                    <div className="mt-3 flex items-center gap-1 text-[11px] font-semibold text-primary">
+                      <span>Execute OCR Verification</span>
+                      <ShieldCheck className="size-3.5 transition-transform group-hover:scale-110" />
+                    </div>
                   </button>
                 ))}
               </div>
@@ -261,30 +295,31 @@ function VerifyPage() {
           </div>
 
           <div className="space-y-6">
-            <Panel title="How this works" icon={ShieldCheck}>
-              <ol className="space-y-3 text-sm text-muted-foreground">
+            <Panel title="Verification Pipeline Architecture" icon={ShieldCheck}>
+              <ol className="space-y-3 text-xs text-muted-foreground">
                 {[
-                  "The image is resized, converted to greyscale and contrast-corrected for reading.",
-                  "Tesseract OCR reads the text directly from those pixels.",
-                  "The document type and fields are parsed from that recognised text only.",
-                  "The matching reference record is searched using the values read from the document.",
-                  "Linked records for the matched person are checked and a risk score is produced.",
+                  "Document image preprocessed via greyscale and Otsu contrast enhancement.",
+                  "Tesseract OCR neural network parses raw text lines in-memory.",
+                  "Regular expression parser extracts name, identifier, date of birth and address.",
+                  "Document identifier looked up in the 600-record synthetic registry.",
+                  "Cross-document consistency engine verifies linked credentials for the citizen.",
+                  "Heuristic risk engine calculates weighted score and decision recommendation.",
                 ].map((line, i) => (
-                  <li key={line} className="flex gap-3">
-                    <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-info-soft text-[11px] font-semibold text-primary">
+                  <li key={line} className="flex gap-2.5">
+                    <span className="flex size-4.5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[10px] font-bold text-primary ring-1 ring-border">
                       {i + 1}
                     </span>
-                    {line}
+                    <span className="leading-relaxed">{line}</span>
                   </li>
                 ))}
               </ol>
             </Panel>
 
-            <Panel title="Important notice">
-              <p className="text-sm text-muted-foreground">
-                OCR runs inside your browser — the image is never uploaded to a government system. If a
-                field cannot be read, it is reported as unreadable and never filled in from the
-                reference records. Results come from synthetic demonstration data only.
+            <Panel title="Data Privacy &amp; Air-Gap Policy">
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Optical character recognition runs entirely on the client workstation. Uploaded
+                images are never sent over external network APIs or stored in external databases.
+                All reference data belongs to the synthetic demonstration database.
               </p>
             </Panel>
           </div>

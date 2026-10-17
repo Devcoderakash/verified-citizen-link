@@ -153,7 +153,11 @@ export function extractFromOcr(
       ocrDurationMs: ocr.durationMs,
       typeDetection:
         selectedType === "AUTO"
-          ? { source: "OCR_TEXT", confidence: classification.confidence, indicators: classification.matchedIndicators }
+          ? {
+              source: "OCR_TEXT",
+              confidence: classification.confidence,
+              indicators: classification.matchedIndicators,
+            }
           : { source: "MANUAL", confidence: "HIGH", indicators: [] },
       missingFields: parsed.missing,
       ...(scenarioLabel ? { scenarioLabel } : {}),

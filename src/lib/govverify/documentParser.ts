@@ -138,7 +138,11 @@ function findAddress(ls: string[]): string | null {
     if (/^(dob|date of birth|gender|लिंग)/i.test(l)) break;
     parts.push(l.replace(/[\u0900-\u097F]/g, "").trim());
   }
-  const addr = parts.join(", ").replace(/\s*,\s*,+/g, ", ").replace(/\s+/g, " ").trim();
+  const addr = parts
+    .join(", ")
+    .replace(/\s*,\s*,+/g, ", ")
+    .replace(/\s+/g, " ")
+    .trim();
   return addr.length > 5 ? addr.replace(/[,\s]+$/, "") : null;
 }
 

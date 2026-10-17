@@ -20,7 +20,11 @@ export function DocumentPreview({
     <div className="flex items-start gap-4 rounded-xl border border-border bg-secondary/40 p-4">
       <div className="flex h-24 w-36 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border bg-card">
         {previewUrl ? (
-          <img src={previewUrl} alt="Uploaded document preview" className="h-full w-full object-cover" />
+          <img
+            src={previewUrl}
+            alt="Uploaded document preview"
+            className="h-full w-full object-cover"
+          />
         ) : (
           <FileText className="size-8 text-muted-foreground" />
         )}

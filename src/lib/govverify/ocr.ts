@@ -102,7 +102,13 @@ export async function runOcr(
     const collect = (node: unknown) => {
       if (!node || typeof node !== "object") return;
       const n = node as Record<string, unknown>;
-      if (typeof n["text"] === "string" && typeof n["confidence"] === "number" && !n["words"] && !n["lines"] && !n["paragraphs"]) {
+      if (
+        typeof n["text"] === "string" &&
+        typeof n["confidence"] === "number" &&
+        !n["words"] &&
+        !n["lines"] &&
+        !n["paragraphs"]
+      ) {
         words.push({ confidence: n["confidence"] as number });
       }
       for (const key of ["paragraphs", "lines", "words"]) {

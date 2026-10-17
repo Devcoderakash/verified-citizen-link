@@ -4,11 +4,7 @@
  * database, checks the citizen's other identity records, and hands the
  * signals to the risk engine.
  */
-import {
-  findDocumentByNumber,
-  getPerson,
-  getPersonDocuments,
-} from "./db";
+import { findDocumentByNumber, getPerson, getPersonDocuments } from "./db";
 import { calculateRisk } from "./risk";
 import type {
   CrossDocumentEntry,
@@ -67,9 +63,7 @@ function newVerificationId(): string {
   return `GV-${stamp}-${rand}`;
 }
 
-export async function runVerification(
-  extracted: ExtractedDocument,
-): Promise<VerificationOutcome> {
+export async function runVerification(extracted: ExtractedDocument): Promise<VerificationOutcome> {
   const verificationId = newVerificationId();
   const createdAt = new Date().toISOString();
   const dbDoc = await findDocumentByNumber(extracted.documentType, extracted.documentNumber);
@@ -137,7 +131,11 @@ export async function runVerification(
   });
 
   const dobStatus: MatchStatus =
-    !extracted.dob || !dbDoc.dob ? "NOT_AVAILABLE" : extracted.dob === dbDoc.dob ? "MATCH" : "MISMATCH";
+    !extracted.dob || !dbDoc.dob
+      ? "NOT_AVAILABLE"
+      : extracted.dob === dbDoc.dob
+        ? "MATCH"
+        : "MISMATCH";
   fields.push({
     field_name: "Date of Birth",
     extracted_value: extracted.dob,
@@ -268,7 +266,6 @@ export async function runVerification(
       : risk.level === "HIGH" || risk.level === "CRITICAL"
         ? "HIGH_RISK"
         : "REVIEW_REQUIRED";
-
 
   const decision =
     verificationStatus === "VERIFIED"

@@ -2,13 +2,13 @@ import { Check, Circle, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export const PROCESSING_STEPS = [
-  "Document uploaded",
-  "Image preprocessing",
-  "Running OCR on the image",
-  "Extracting identity fields",
-  "Searching verification records",
-  "Cross-document verification",
-  "Calculating risk score",
+  "Document uploaded & validated",
+  "Image greyscale & contrast preprocessing",
+  "Neural OCR recognition (Tesseract.js)",
+  "Parsing citizen identity fields",
+  "Reconciling with synthetic reference registry",
+  "Cross-document consistency check",
+  "Calculating weighted risk assessment",
 ] as const;
 
 export function ProcessingSteps({
@@ -20,22 +20,24 @@ export function ProcessingSteps({
   ocrProgress?: number | undefined;
   ocrStatus?: string | undefined;
 }) {
-  const pct = Math.round((Math.min(current, PROCESSING_STEPS.length) / PROCESSING_STEPS.length) * 100);
+  const pct = Math.round(
+    (Math.min(current, PROCESSING_STEPS.length) / PROCESSING_STEPS.length) * 100,
+  );
   return (
     <div>
       <div className="mb-6">
         <div className="mb-2 flex items-center justify-between text-xs text-muted-foreground">
-          <span>Verification pipeline</span>
-          <span className="tabular-nums">{pct}%</span>
+          <span className="font-semibold text-foreground">Inspection Pipeline Execution</span>
+          <span className="font-mono font-semibold tabular-nums text-foreground">{pct}%</span>
         </div>
-        <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+        <div className="h-2 w-full overflow-hidden rounded-full bg-secondary">
           <div
             className="h-full rounded-full bg-primary transition-[width] duration-500 ease-out"
             style={{ width: `${pct}%` }}
           />
         </div>
       </div>
-      <ol className="space-y-3">
+      <ol className="space-y-2.5">
         {PROCESSING_STEPS.map((step, i) => {
           const done = i < current;
           const active = i === current;
@@ -44,12 +46,12 @@ export function ProcessingSteps({
             <li
               key={step}
               className={cn(
-                "rounded-lg border px-4 py-3 text-sm transition-colors",
+                "rounded-md border px-3.5 py-2.5 text-xs sm:text-sm transition-colors",
                 done
-                  ? "border-success/25 bg-success-soft/60 text-foreground"
+                  ? "border-success/30 bg-success-soft/50 text-foreground"
                   : active
-                    ? "border-primary/30 bg-info-soft text-foreground"
-                    : "border-border bg-card text-muted-foreground",
+                    ? "border-primary/40 bg-primary/5 text-foreground ring-1 ring-primary/20"
+                    : "border-border/80 bg-card text-muted-foreground",
               )}
             >
               <div className="flex items-center gap-3">

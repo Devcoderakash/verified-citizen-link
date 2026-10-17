@@ -37,12 +37,15 @@ export function riskLevelFor(score: number): RiskLevel {
   return "CRITICAL";
 }
 
-
 export function calculateRisk(input: RiskInput): RiskResult {
   const reasons: RiskReason[] = [];
 
   if (input.nameStatus === "MISMATCH") {
-    reasons.push({ code: "NAME_MISMATCH", label: "Name mismatch", weight: RISK_WEIGHTS.NAME_MISMATCH });
+    reasons.push({
+      code: "NAME_MISMATCH",
+      label: "Name mismatch",
+      weight: RISK_WEIGHTS.NAME_MISMATCH,
+    });
   } else if (input.nameStatus === "PARTIAL_MATCH") {
     reasons.push({
       code: "NAME_PARTIAL",
@@ -51,7 +54,11 @@ export function calculateRisk(input: RiskInput): RiskResult {
     });
   }
   if (input.dobStatus === "MISMATCH") {
-    reasons.push({ code: "DOB_MISMATCH", label: "Date of birth mismatch", weight: RISK_WEIGHTS.DOB_MISMATCH });
+    reasons.push({
+      code: "DOB_MISMATCH",
+      label: "Date of birth mismatch",
+      weight: RISK_WEIGHTS.DOB_MISMATCH,
+    });
   }
   if (input.numberStatus === "MISMATCH") {
     reasons.push({
@@ -61,7 +68,11 @@ export function calculateRisk(input: RiskInput): RiskResult {
     });
   }
   if (input.addressStatus === "MISMATCH") {
-    reasons.push({ code: "ADDRESS_MISMATCH", label: "Address mismatch", weight: RISK_WEIGHTS.ADDRESS_MISMATCH });
+    reasons.push({
+      code: "ADDRESS_MISMATCH",
+      label: "Address mismatch",
+      weight: RISK_WEIGHTS.ADDRESS_MISMATCH,
+    });
   } else if (input.addressStatus === "PARTIAL_MATCH") {
     reasons.push({
       code: "ADDRESS_PARTIAL",

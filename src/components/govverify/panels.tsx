@@ -22,18 +22,16 @@ export function Panel({
   return (
     <section className={cn("panel overflow-hidden", className)}>
       {title ? (
-        <header className="flex items-start justify-between gap-4 border-b border-border px-5 py-4">
-          <div className="flex items-start gap-3">
+        <header className="flex items-center justify-between gap-4 border-b border-border/80 bg-secondary/15 px-5 py-3.5">
+          <div className="flex items-center gap-3">
             {Icon ? (
-              <span className="mt-0.5 flex size-8 items-center justify-center rounded-lg bg-info-soft text-primary">
-                <Icon className="size-4" />
+              <span className="flex size-7 items-center justify-center rounded-md bg-primary/10 text-primary ring-1 ring-border">
+                <Icon className="size-3.5" />
               </span>
             ) : null}
             <div>
-              <h2 className="text-sm font-semibold tracking-tight">{title}</h2>
-              {description ? (
-                <p className="mt-0.5 text-xs text-muted-foreground">{description}</p>
-              ) : null}
+              <h2 className="text-sm font-semibold tracking-tight text-foreground">{title}</h2>
+              {description ? <p className="text-xs text-muted-foreground">{description}</p> : null}
             </div>
           </div>
           {actions}
@@ -58,21 +56,30 @@ export function StatCard({
   hint?: string;
 }) {
   const tones = {
-    neutral: "bg-info-soft text-primary",
-    success: "bg-success-soft text-success",
-    warning: "bg-warning-soft text-warning",
-    danger: "bg-danger-soft text-danger",
+    neutral: "bg-primary/10 text-primary ring-border",
+    success: "bg-success-soft text-success ring-success/30",
+    warning: "bg-warning-soft text-warning ring-warning/30",
+    danger: "bg-danger-soft text-danger ring-danger/30",
   } as const;
   return (
-    <div className="panel gv-rise p-5">
+    <div className="group panel gv-rise p-5 transition-all hover:border-primary/40 hover:shadow-xs">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">{label}</p>
-          <p className="mt-2 text-3xl font-semibold tracking-tight tabular-nums">{value}</p>
-          {hint ? <p className="mt-1 text-xs text-muted-foreground">{hint}</p> : null}
+          <p className="text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
+            {label}
+          </p>
+          <p className="mt-2 text-2xl font-bold tracking-tight text-foreground tabular-nums sm:text-3xl">
+            {value}
+          </p>
+          {hint ? <p className="mt-1.5 text-xs text-muted-foreground">{hint}</p> : null}
         </div>
-        <span className={cn("flex size-10 items-center justify-center rounded-xl", tones[tone])}>
-          <Icon className="size-5" />
+        <span
+          className={cn(
+            "flex size-9 items-center justify-center rounded-lg ring-1 transition-transform group-hover:scale-105",
+            tones[tone],
+          )}
+        >
+          <Icon className="size-4.5" />
         </span>
       </div>
     </div>
@@ -89,9 +96,18 @@ export function FieldRow({
   mono?: boolean;
 }) {
   return (
-    <div className="flex flex-col gap-0.5 border-b border-border/70 py-3 last:border-0 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
-      <span className="text-xs font-medium tracking-wide text-muted-foreground uppercase">{label}</span>
-      <span className={cn("text-sm font-medium", mono && "font-mono tracking-wide")}>{value}</span>
+    <div className="flex flex-col gap-0.5 border-b border-border/60 px-1 py-2.5 transition-colors hover:bg-secondary/20 last:border-0 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+      <span className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+        {label}
+      </span>
+      <span
+        className={cn(
+          "text-xs font-medium text-foreground sm:text-sm",
+          mono && "font-mono font-semibold tracking-wide",
+        )}
+      >
+        {value}
+      </span>
     </div>
   );
 }

@@ -20,12 +20,7 @@ const INDICATORS: Record<DocumentType, string[]> = {
     "मेरा आधार",
     "भारत सरकार",
   ],
-  PAN: [
-    "income tax department",
-    "permanent account number",
-    "pan card",
-    "आयकर विभाग",
-  ],
+  PAN: ["income tax department", "permanent account number", "pan card", "आयकर विभाग"],
   VOTER_ID: [
     "election commission of india",
     "elector photo identity card",

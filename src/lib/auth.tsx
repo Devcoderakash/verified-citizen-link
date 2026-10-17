@@ -62,12 +62,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setSession(null);
   }, []);
 
-  const value = useMemo(() => ({ session, ready, signIn, signOut }), [session, ready, signIn, signOut]);
+  const value = useMemo(
+    () => ({ session, ready, signIn, signOut }),
+    [session, ready, signIn, signOut],
+  );
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
+const FALLBACK_AUTH_CONTEXT: AuthContextValue = {
+  session: null,
+  ready: false,
+  signIn: () => ({ ok: false, error: "Authentication system is initializing." }),
+  signOut: () => {},
+};
+
 export function useAuth(): AuthContextValue {
   const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error("useAuth must be used inside AuthProvider");
-  return ctx;
+  return ctx ?? FALLBACK_AUTH_CONTEXT;
 }

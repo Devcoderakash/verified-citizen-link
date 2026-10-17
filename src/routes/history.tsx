@@ -22,7 +22,8 @@ export const Route = createFileRoute("/history")({
       { property: "og:title", content: "Verification History | GovVerify" },
       {
         property: "og:description",
-        content: "Search past identity verifications by name, reference, document type and outcome.",
+        content:
+          "Search past identity verifications by name, reference, document type and outcome.",
       },
     ],
   }),
@@ -67,16 +68,19 @@ function HistoryPage() {
     });
   }, [data, query, type, status]);
 
+  const hasFilters = query || type !== "ALL" || status !== "ALL";
+
   return (
     <AppShell
-      title="Verification history"
-      description="All identity checks recorded in this workspace"
+      title="Verification Audit Archive"
+      description="Inspect and search all recorded identity checks performed in this workspace"
       actions={
         <Link
           to="/verify"
-          className="inline-flex items-center gap-2 rounded-lg bg-primary px-3.5 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+          className="inline-flex cursor-pointer items-center gap-2 rounded-md bg-primary px-3.5 py-2 text-sm font-medium text-primary-foreground shadow-xs transition-colors hover:bg-primary/90"
         >
-          <ScanLine className="size-4" /> New verification
+          <ScanLine className="size-4" />
+          <span>New Verification</span>
         </Link>
       }
     >
@@ -87,32 +91,56 @@ function HistoryPage() {
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search by citizen name, reference number or person ID"
-              className="w-full rounded-lg border border-input bg-card py-2.5 pr-3 pl-9 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-ring/30"
+              placeholder="Search by citizen name, reference number or person ID…"
+              className="w-full rounded-md border border-input bg-card py-2 pr-3 pl-9 text-sm text-foreground outline-none transition-all focus:border-primary focus:ring-2 focus:ring-ring/30"
             />
           </div>
-          <select
-            value={type}
-            onChange={(e) => setType(e.target.value as DocumentType | "ALL")}
-            className="rounded-lg border border-input bg-card px-3 py-2.5 text-sm outline-none focus:border-primary"
-          >
-            {TYPE_FILTERS.map((t) => (
-              <option key={t} value={t}>
-                {t === "ALL" ? "All document types" : DOCUMENT_SHORT[t]}
-              </option>
-            ))}
-          </select>
-          <select
-            value={status}
-            onChange={(e) => setStatus(e.target.value as VerificationStatus | "ALL")}
-            className="rounded-lg border border-input bg-card px-3 py-2.5 text-sm outline-none focus:border-primary"
-          >
-            {STATUS_FILTERS.map((s) => (
-              <option key={s} value={s}>
-                {s === "ALL" ? "All outcomes" : s.toLowerCase().replace(/_/g, " ")}
-              </option>
-            ))}
-          </select>
+          <div className="flex flex-wrap items-center gap-2">
+            <select
+              value={type}
+              onChange={(e) => setType(e.target.value as DocumentType | "ALL")}
+              className="cursor-pointer rounded-md border border-input bg-card px-3 py-2 text-xs font-medium text-foreground outline-none transition-colors focus:border-primary"
+            >
+              {TYPE_FILTERS.map((t) => (
+                <option key={t} value={t}>
+                  {t === "ALL" ? "All Document Types" : DOCUMENT_SHORT[t]}
+                </option>
+              ))}
+            </select>
+            <select
+              value={status}
+              onChange={(e) => setStatus(e.target.value as VerificationStatus | "ALL")}
+              className="cursor-pointer rounded-md border border-input bg-card px-3 py-2 text-xs font-medium text-foreground outline-none transition-colors focus:border-primary"
+            >
+              {STATUS_FILTERS.map((s) => (
+                <option key={s} value={s}>
+                  {s === "ALL" ? "All Statuses" : s.toLowerCase().replace(/_/g, " ")}
+                </option>
+              ))}
+            </select>
+            {hasFilters ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setQuery("");
+                  setType("ALL");
+                  setStatus("ALL");
+                }}
+                className="cursor-pointer rounded-md border border-border bg-secondary/80 px-2.5 py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+              >
+                Reset
+              </button>
+            ) : null}
+          </div>
+        </div>
+
+        <div className="mt-3 flex items-center justify-between border-t border-border/60 pt-2.5 text-xs text-muted-foreground">
+          <span>
+            Displaying <strong className="font-semibold text-foreground">{rows.length}</strong> of{" "}
+            <strong className="font-semibold text-foreground">{(data ?? []).length}</strong> total
+            inspections
+          </span>
+          <span className="font-mono text-[11px]">Indexed in Local Cache</span>
         </div>
       </Panel>
 
@@ -120,55 +148,72 @@ function HistoryPage() {
         {isLoading ? (
           <div className="space-y-2 p-5">
             {[0, 1, 2, 3, 4].map((i) => (
-              <div key={i} className="h-12 animate-pulse rounded-lg bg-muted" />
+              <div key={i} className="h-12 animate-pulse rounded-md bg-muted" />
             ))}
           </div>
         ) : rows.length === 0 ? (
           <EmptyState
             icon={History}
-            title="No matching verifications"
-            description="Adjust the filters above, or run a new identity verification to add records."
+            title="No Matching Verification Records"
+            description="Adjust your search query or filter selections above, or execute a new verification."
           />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[760px] text-sm">
               <thead>
-                <tr className="border-b border-border text-left text-xs tracking-wide text-muted-foreground uppercase">
-                  <th className="px-5 py-3 font-medium">Citizen</th>
-                  <th className="px-5 py-3 font-medium">Document</th>
-                  <th className="px-5 py-3 font-medium">Reference</th>
-                  <th className="px-5 py-3 font-medium">Date</th>
-                  <th className="px-5 py-3 font-medium">Risk</th>
-                  <th className="px-5 py-3 font-medium">Outcome</th>
+                <tr className="border-b border-border/80 bg-secondary/20 text-left text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
+                  <th className="px-5 py-3.5">Citizen Identity</th>
+                  <th className="px-5 py-3.5">Document Type</th>
+                  <th className="px-5 py-3.5">Inspection Ref</th>
+                  <th className="px-5 py-3.5">Timestamp</th>
+                  <th className="px-5 py-3.5">Risk Score</th>
+                  <th className="px-5 py-3.5">Outcome</th>
+                  <th className="px-5 py-3.5 text-right">Action</th>
                 </tr>
               </thead>
-              <tbody>
-                {rows.map((r, i) => (
+              <tbody className="divide-y divide-border/60">
+                {rows.map((r) => (
                   <tr
                     key={r.verification_id}
-                    className={cn("border-b border-border/60 last:border-0", i % 2 ? "bg-secondary/25" : "")}
+                    className="group transition-colors hover:bg-secondary/40"
                   >
                     <td className="px-5 py-3 font-medium">
                       <Link
                         to="/result/$verificationId"
                         params={{ verificationId: r.verification_id }}
-                        className="hover:text-primary hover:underline"
+                        className="flex items-center gap-2.5 font-semibold text-foreground group-hover:text-primary"
                       >
-                        {r.citizen_name ?? "Unknown holder"}
+                        <div className="flex size-7 shrink-0 items-center justify-center rounded-md bg-primary/10 text-xs font-semibold text-primary">
+                          {r.citizen_name ? r.citizen_name.slice(0, 2).toUpperCase() : "ID"}
+                        </div>
+                        <span className="truncate">{r.citizen_name ?? "Unknown Citizen"}</span>
                       </Link>
                     </td>
                     <td className="px-5 py-3 text-muted-foreground">
-                      {DOCUMENT_SHORT[r.document_type]}
+                      <span className="rounded border border-border bg-secondary/60 px-2 py-0.5 text-xs font-mono">
+                        {DOCUMENT_SHORT[r.document_type]}
+                      </span>
                     </td>
                     <td className="px-5 py-3 font-mono text-xs text-muted-foreground">
                       {r.verification_id}
                     </td>
-                    <td className="px-5 py-3 text-muted-foreground">{formatDateTime(r.created_at)}</td>
+                    <td className="px-5 py-3 text-xs text-muted-foreground">
+                      {formatDateTime(r.created_at)}
+                    </td>
                     <td className="px-5 py-3">
                       <RiskBadge level={r.risk_level} score={Number(r.risk_score)} />
                     </td>
                     <td className="px-5 py-3">
                       <StatusBadge status={r.verification_status} />
+                    </td>
+                    <td className="px-5 py-3 text-right">
+                      <Link
+                        to="/result/$verificationId"
+                        params={{ verificationId: r.verification_id }}
+                        className="inline-flex cursor-pointer items-center gap-1 rounded-md border border-border/80 bg-card px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:border-primary/40 hover:bg-primary/5 hover:text-primary"
+                      >
+                        <span>Dossier</span>
+                      </Link>
                     </td>
                   </tr>
                 ))}

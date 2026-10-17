@@ -1,10 +1,17 @@
-import { AlertTriangle, CheckCircle2, CircleSlash, MinusCircle, ShieldAlert, ShieldCheck } from "lucide-react";
+import {
+  AlertTriangle,
+  CheckCircle2,
+  CircleSlash,
+  MinusCircle,
+  ShieldAlert,
+  ShieldCheck,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { MATCH_LABEL, RISK_LABEL, STATUS_LABEL } from "@/lib/govverify/format";
 import type { MatchStatus, RiskLevel, VerificationStatus } from "@/lib/govverify/types";
 
 const base =
-  "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium whitespace-nowrap";
+  "inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-xs font-semibold tracking-tight whitespace-nowrap";
 
 export function MatchBadge({ status }: { status: MatchStatus }) {
   const map: Record<MatchStatus, string> = {
@@ -38,7 +45,11 @@ export function RiskBadge({ level, score }: { level: RiskLevel; score?: number }
   };
   return (
     <span className={cn(base, map[level])}>
-      {level === "LOW" ? <ShieldCheck className="size-3.5" /> : <ShieldAlert className="size-3.5" />}
+      {level === "LOW" ? (
+        <ShieldCheck className="size-3.5" />
+      ) : (
+        <ShieldAlert className="size-3.5" />
+      )}
       {RISK_LABEL[level]}
       {typeof score === "number" ? ` · ${score}` : ""}
     </span>
@@ -52,7 +63,8 @@ export function StatusBadge({ status }: { status: VerificationStatus }) {
     HIGH_RISK: "border-danger/40 bg-danger-soft text-danger",
     NO_RECORD: "border-border bg-muted text-muted-foreground",
   };
-  const Icon = status === "VERIFIED" ? CheckCircle2 : status === "NO_RECORD" ? MinusCircle : AlertTriangle;
+  const Icon =
+    status === "VERIFIED" ? CheckCircle2 : status === "NO_RECORD" ? MinusCircle : AlertTriangle;
   return (
     <span className={cn(base, map[status])}>
       <Icon className="size-3.5" aria-hidden />

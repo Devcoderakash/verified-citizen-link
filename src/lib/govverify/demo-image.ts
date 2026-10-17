@@ -121,7 +121,11 @@ export function renderDemoCard(input: DemoCardInput): string {
   ctx.fillText(printedNumber, 48, H - 80);
   ctx.fillStyle = "#a03030";
   ctx.font = "24px Arial, sans-serif";
-  ctx.fillText(`SAMPLE - synthetic ${DOCUMENT_LABELS[documentType]} - not a real document`, 48, H - 30);
+  ctx.fillText(
+    `SAMPLE - synthetic ${DOCUMENT_LABELS[documentType]} - not a real document`,
+    48,
+    H - 30,
+  );
 
   return canvas.toDataURL("image/png");
 }
